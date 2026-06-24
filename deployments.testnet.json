@@ -1,0 +1,49 @@
+{
+  "network": "testnet",
+  "version": "v3 (USDC) + on-chain AWS Nitro attestation (in-place upgrade)",
+  "publishDigest": "CK29RrhAUNAb33kv3YfXU5PJWuaVR9HsHFh1EgCx8VVq",
+  "packageId": "0xa105190b2218938815920010957f7adf856940452e304a63e195e132f14713b9",
+  "upgradedPackageId": "0xffbc99cca6437bcd05e23e8bc290b968b83074ab36da6ad1938b5b96517b8310",
+  "upgradeChain": [
+    "0xa105190b… v1 (publish)",
+    "0xd74650b7… on-chain Nitro attestation",
+    "0x2f3761b5… verify_and_apply_score_attested_v2 (freshness) + supply share guard",
+    "0xffbc99cc… lending_pool::withdraw_amount (partial withdraw / repay-from-LP)"
+  ],
+  "note": "Types live at packageId (0xa105, module self-address). Call upgrade-ADDED functions (verify_and_apply_score_attested_v2, lending_pool::withdraw_amount) at upgradedPackageId (latest). Pool/escrow/coin/faucet unchanged across upgrades.",
+  "coinType": "0xa105190b2218938815920010957f7adf856940452e304a63e195e132f14713b9::usdc::USDC",
+  "deployer": "0xbe4290542197515da9967183c24b60ad092f0d08a7baf1201f7eec913d44dc23",
+  "objects": {
+    "usdcFaucet": "0xf532e1e7f8c83d2be47a68efc6b37bde7f436b76682885e9b3dd50380e6a1d6f",
+    "creditOracle": "0xe4cf3ea3060adab8a42406a7344471eb76002e93c5bb14578e35c578223b7e88",
+    "oracleAdminCap": "0xa5ff3b0e85441bc6e3ee49996ed4072bbd75222a81058c2f1afd80b90e4d37af",
+    "attestedOracle": "0xe8d3e3baf92ad7ab86d57ae55aedaf2be15fdff6000881f85aa0c489cc6753a8",
+    "upgradeCap": "0x269955cfe57732e0f8179c73c0d99bf8ce13acfe216c4f8486b9de9830f09364",
+    "demoLendingPool": "0x2763f2907909d2aade0224bad144d4497df741d01c500d781c7abd2331cb9993",
+    "demoMerchantEscrow": "0x44945bd13ef548fd3beb77c6d111bdfd88e549a3650a9caa7213d527d4e59c0c",
+    "dusdcLendingPool": "0xa68c5753188a6ca5f4ae9193ec74830737ebdcb1130dec8fd4a1c4316a49d73a",
+    "deepLendingPool": "0x126229edba272680ce5234ad5454327600e66526e563432c2e74a95ef967f2e2"
+  },
+  "deepbookTokens": {
+    "DUSDC": "0xe95040085976bfd54a1a07225cd46c8a2b4e8e2b6732f140a0fc49850ba73e1a::dusdc::DUSDC",
+    "DEEP": "0x36dbef866a1d62bf7328989a10fb2f07d769f4ee587c0de4a0a256e57e0a58a8::deep::DEEP"
+  },
+  "enclave": {
+    "credit_signing_pubkey": "0x1b250be06dd80370ff11f0b8fe17d4f32da4485005bf9d72a033933709d45777",
+    "attested_on_chain": true,
+    "attestation_endpoint": "http://98.81.188.34:3000/get_attestation",
+    "process_endpoint": "http://98.81.188.34:3000/process_data"
+  },
+  "verifiedOnChain": {
+    "bnpl_loop": "credit limit 50 -> 53 USDC on repayment",
+    "yield_loop": "lender supplied 200 -> withdrew 227.5 USDC; loan auto-repaid from yield",
+    "confidential_credit": "TEE-signed score 750 -> unsecured 50 USDC borrow",
+    "nitro_attestation": "enclave key 0x1b250b... registered via on-chain AWS Nitro attestation (PCR-gated); TEE-signed score 780 verified against the attested key and applied"
+  },
+  "modules": ["bnpl", "collateral", "confidential_credit", "credit", "lending_pool", "liquidity_pool", "market", "merchant_escrow", "registry", "swap_router", "usdc", "usdo", "xorr"],
+  "previousPublishes": {
+    "v2_usdt": "0x9572997e5d494f961fc9b2260b8c085a1b20b16bd1495f3972b7dfda0ff11a40",
+    "v1_bnpl": "0x6cfb612ed64ac01de2f6f434f93ffa0a266ed25a3d93dbf7172e409ba26482eb",
+    "v0_amm": "0xcce58c073fe38e06bca69674792098501f5a6cddac197f2565d6300ac0158a4b"
+  }
+}
