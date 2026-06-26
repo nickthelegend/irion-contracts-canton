@@ -1,0 +1,139 @@
+-- | The share-based lending pool (ports the Soroban `IrionCore` pool).
+--
+-- Accounting mirrors the Stellar version: supplier shares are minted against
+-- `total_assets = available + totalBorrowed`, idle `available` funds BNPL /
+-- unsecured loans, and yield lifts share value. The ERC-4626 donation-attack
+-- guard (lock `minimumLiquidity` on the first deposit; never mint 0 shares) is
+-- ported.
+--
+-- Custody model: on Canton there is no "contract balance" — the protocol
+-- `operator` custodies pooled USDC as `Token` holdings, and this `LendingPool`
+-- contract is the operator-signed internal ledger (the same abstraction the
+-- Soroban contract used, where the contract address held the USDC and tracked
+-- `Available`). Deposits/withdrawals are propose/accept: the supplier actually
+-- transfers USDC into operator custody, and the operator settles shares.
+module Irion.Pool where
+
+import Irion.Token
+
+-- | A supplier's share position. UTXO-style: each accepted deposit creates one.
+template PoolShare
+  with
+    operator : Party
+    supplier : Party
+    shares : Decimal
+  where
+    signatory operator
+    observer supplier
+    ensure shares > 0.0
+
+-- | The pool's internal ledger (operator-custodied USDC).
+template LendingPool
+  with
+    operator : Party
+    usdcIssuer : Party        -- the trusted USDC issuer; deposits must be this asset
+    totalShares : Decimal
+    available : Decimal        -- idle USDC available to lend / redeem
+    totalBorrowed : Decimal    -- principal currently lent out
+    minimumLiquidity : Decimal -- permanently-locked shares (donation-attack guard)
+  where
+    signatory operator
+
+    -- | Operator-only: book external yield into the pool (lifts share value).
+    -- `tokenCid` is a USDC holding already in operator custody of `amount`.
+    choice Pool_InjectYield : ContractId LendingPool
+      with
+        amount : Decimal
+        tokenCid : ContractId Token
+      controller operator
+      do
+        assertMsg "yield must be positive" (amount > 0.0)
+        tok <- fetch tokenCid
+        assertMsg "yield token must be operator-custodied USDC" (tok.owner == operator && tok.issuer == usdcIssuer)
+        assertMsg "yield token covers amount" (tok.amount >= amount)
+        create this with available = available + amount
+
+-- | A supplier's request to deposit `amount` USDC, with the USDC already
+-- escrowed into operator custody (`escrowCid`). The operator settles it.
+template SupplyRequest
+  with
+    operator : Party
+    supplier : Party
+    usdcIssuer : Party
+    amount : Decimal
+    escrowCid : ContractId Token   -- USDC transferred to the operator at propose time
+  where
+    signatory supplier
+    observer operator
+    ensure amount > 0.0
+
+    -- | Operator settles the deposit: verifies the escrow, mints shares.
+    choice SupplyRequest_Accept : (ContractId LendingPool, ContractId PoolShare)
+      with poolCid : ContractId LendingPool
+      controller operator
+      do
+        pool <- fetch poolCid
+        assertMsg "pool operator mismatch" (pool.operator == operator)
+        escrow <- fetch escrowCid
+        assertMsg "escrow must be operator-custodied" (escrow.owner == operator)
+        assertMsg "escrow must be the pool's USDC" (escrow.issuer == pool.usdcIssuer)
+        assertMsg "escrow amount must match request" (escrow.amount == amount)
+        let totalAssets = pool.available + pool.totalBorrowed
+        let (minted, newTotalShares) =
+              if pool.totalShares == 0.0 || totalAssets == 0.0
+                then (amount - pool.minimumLiquidity, amount)         -- first deposit: lock minimumLiquidity
+                else let s = amount * pool.totalShares / totalAssets in (s, pool.totalShares + s)
+        assertMsg "deposit too small to mint shares (donation guard)" (minted > 0.0)
+        archive poolCid
+        newPool <- create pool with available = pool.available + amount, totalShares = newTotalShares
+        share <- create PoolShare with operator, supplier, shares = minted
+        pure (newPool, share)
+
+    -- | Operator rejects/refunds: returns the escrowed USDC to the supplier.
+    choice SupplyRequest_Reject : ContractId Token
+      controller operator
+      do
+        escrow <- fetch escrowCid
+        assertMsg "escrow must be operator-custodied" (escrow.owner == operator)
+        exercise escrowCid Token_Transfer with newOwner = supplier
+
+-- | A supplier's request to redeem a `PoolShare` for its current USDC value.
+template WithdrawRequest
+  with
+    operator : Party
+    supplier : Party
+    shareCid : ContractId PoolShare
+  where
+    signatory supplier
+    observer operator
+
+    -- | Operator settles the redemption out of `available` liquidity.
+    -- `payTokenCid` is an operator-custodied USDC holding >= the redemption.
+    choice WithdrawRequest_Accept : (ContractId LendingPool, ContractId Token)
+      with
+        poolCid : ContractId LendingPool
+        payTokenCid : ContractId Token
+      controller operator
+      do
+        share <- fetch shareCid
+        assertMsg "share/supplier mismatch" (share.supplier == supplier && share.operator == operator)
+        pool <- fetch poolCid
+        assertMsg "pool operator mismatch" (pool.operator == operator)
+        let totalAssets = pool.available + pool.totalBorrowed
+        let amount = share.shares * totalAssets / pool.totalShares
+        assertMsg "insufficient idle liquidity (funds lent out)" (amount <= pool.available)
+        payToken <- fetch payTokenCid
+        assertMsg "pay token must be operator-custodied USDC" (payToken.owner == operator && payToken.issuer == pool.usdcIssuer)
+        assertMsg "pay token must cover redemption" (payToken.amount >= amount)
+        archive shareCid
+        archive poolCid
+        newPool <- create pool with
+          available = pool.available - amount
+          totalShares = pool.totalShares - share.shares
+        paidCid <-
+          if payToken.amount == amount
+            then exercise payTokenCid Token_Transfer with newOwner = supplier
+            else do
+              (toSupplier, _remainder) <- exercise payTokenCid Token_Split with splitAmount = amount
+              exercise toSupplier Token_Transfer with newOwner = supplier
+        pure (newPool, paidCid)

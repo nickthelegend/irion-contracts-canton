@@ -1,0 +1,177 @@
+module Test.Irion.Bnpl where
+
+import Irion.Types
+import Irion.Token
+import Irion.Pool
+import Irion.Credit
+import Irion.Config
+import Irion.Bnpl
+import Test.Irion.Pool (mintUsdc, setupPool, supply, findToken)
+import Test.Irion.Credit (defaultConfig, openProfile)
+import Daml.Script
+import DA.Assert ((===))
+import DA.Time (seconds)
+
+-- | Full collateralised "pay never" lifecycle:
+-- supply → open purchase → merchant settle → repay → release collateral.
+test_bnpl_lifecycle : Script ()
+test_bnpl_lifecycle = do
+  operator <- allocateParty "Operator"
+  usdcIssuer <- allocateParty "USDC"
+  creditIssuer <- allocateParty "CreditIssuer"
+  supplier <- allocateParty "Supplier"
+  borrower <- allocateParty "Borrower"
+  merchant <- allocateParty "Merchant"
+
+  cfgCid <- submit operator do
+    createCmd ProtocolConfig with operator; config = defaultConfig usdcIssuer creditIssuer
+  pool0 <- setupPool operator usdcIssuer
+
+  -- supplier funds the pool with 1000 USDC
+  supTok <- mintUsdc usdcIssuer supplier 1000.0
+  (pool1, _supShare) <- supply operator usdcIssuer supplier pool0 1000.0 supTok
+
+  -- onboard borrower (starter line 50)
+  profile0 <- openProfile operator cfgCid borrower
+
+  -- borrower opens a BNPL purchase: 40 financed, 50 collateral (over-collateralised)
+  borrowerCollat <- mintUsdc usdcIssuer borrower 50.0
+  collatEscrow <- submit borrower do exerciseCmd borrowerCollat Token_Transfer with newOwner = operator
+  reqCid <- submit borrower do
+    createCmd BnplRequest with
+      operator; borrower; merchant
+      amount = 40.0; collateral = 50.0
+      collateralEscrowCid = collatEscrow; termSeconds = 86400
+  merchFund <- findToken operator 40.0
+  (loan0, pool2, profile1, _payment) <- submit operator do
+    exerciseCmd reqCid BnplRequest_Accept with
+      poolCid = pool1; profileCid = profile0; configCid = cfgCid; merchantFundTokenCid = merchFund
+
+  -- pool drew 40 to fund the merchant; loan owes 40 + 5% = 42
+  Some p2 <- queryContractId operator pool2
+  p2.available === 960.0
+  p2.totalBorrowed === 40.0
+  Some l0 <- queryContractId operator loan0
+  l0.outstanding === 42.0
+  l0.principal === 40.0
+
+  -- merchant was paid 40 USDC up front
+  merchToks <- query @Token merchant
+  [ t.amount | (_, t) <- merchToks, t.owner == merchant ] === [40.0]
+
+  -- borrower repays the full 42. Mediated submission: the operator co-submits
+  -- (as its backend would), which also gives the tx visibility of the pool/config.
+  repayTok <- mintUsdc usdcIssuer borrower 42.0
+  (loan1, pool3, profile2) <- submitMulti [borrower, operator] [] do
+    exerciseCmd loan0 Loan_Pay with
+      payer = borrower; payTokenCid = repayTok; amount = 42.0
+      poolCid = pool2; profileCid = profile1; configCid = cfgCid
+  Some l1 <- queryContractId operator loan1
+  l1.status === Repaid
+  l1.outstanding === 0.0
+  -- pool made whole + 2 interest; profile rewarded (+10% of 40 principal)
+  Some p3 <- queryContractId operator pool3
+  p3.available === 1002.0
+  p3.totalBorrowed === 0.0
+  Some pr2 <- queryContractId operator profile2
+  pr2.outstanding === 0.0
+  pr2.repayments === 1
+  pr2.creditLimit === 54.0
+
+  -- borrower reclaims the 50 collateral (operator co-submits: the collateral
+  -- holding is in operator custody, so the tx needs operator visibility).
+  collatBack <- submitMulti [borrower, operator] [] do exerciseCmd loan1 Loan_ReleaseCollateral
+  Some cb <- queryContractId borrower collatBack
+  cb.owner === borrower
+  cb.amount === 50.0
+
+-- | Unsecured borrow is gated on an attested score >= 600.
+test_unsecured_requires_score : Script ()
+test_unsecured_requires_score = do
+  operator <- allocateParty "Operator"
+  usdcIssuer <- allocateParty "USDC"
+  creditIssuer <- allocateParty "CreditIssuer"
+  supplier <- allocateParty "Supplier"
+  borrower <- allocateParty "Borrower"
+
+  cfgCid <- submit operator do
+    createCmd ProtocolConfig with operator; config = defaultConfig usdcIssuer creditIssuer
+  pool0 <- setupPool operator usdcIssuer
+  supTok <- mintUsdc usdcIssuer supplier 1000.0
+  (pool1, _s) <- supply operator usdcIssuer supplier pool0 1000.0 supTok
+  profile0 <- openProfile operator cfgCid borrower
+
+  -- score 0 -> unsecured borrow must fail
+  req0 <- submit borrower do createCmd UnsecuredRequest with operator; borrower; amount = 30.0; termSeconds = 86400
+  disb0 <- findToken operator 30.0
+  submitMustFail operator do
+    exerciseCmd req0 UnsecuredRequest_Accept with
+      poolCid = pool1; profileCid = profile0; configCid = cfgCid; disburseTokenCid = disb0
+
+  -- trusted attestation lifts the score to 790
+  attCid <- submit creditIssuer do
+    createCmd CreditAttestation with creditIssuer; operator; borrower; approvedLimit = 3800.0; score = 790
+  profile1 <- submit operator do
+    exerciseCmd attCid Attestation_Apply with configCid = cfgCid; profileCid = profile0
+
+  -- now an unsecured draw of 30 succeeds, with the +5% premium (10% total)
+  req1 <- submit borrower do createCmd UnsecuredRequest with operator; borrower; amount = 30.0; termSeconds = 86400
+  disb1 <- findToken operator 30.0
+  (loan, _pool2, _profile2) <- submit operator do
+    exerciseCmd req1 UnsecuredRequest_Accept with
+      poolCid = pool1; profileCid = profile1; configCid = cfgCid; disburseTokenCid = disb1
+  Some l <- queryContractId operator loan
+  l.outstanding === 33.0     -- 30 + 30*(0.05+0.05)
+  l.collateral === 0.0
+
+  -- the borrower actually received 30 USDC
+  borrowerToks <- query @Token borrower
+  [ t.amount | (_, t) <- borrowerToks, t.owner == borrower ] === [30.0]
+
+-- | A past-due loan defaults: collateral covers the debt, surplus is refunded,
+-- creditworthiness is revoked.
+test_default_seizes_collateral : Script ()
+test_default_seizes_collateral = do
+  operator <- allocateParty "Operator"
+  usdcIssuer <- allocateParty "USDC"
+  creditIssuer <- allocateParty "CreditIssuer"
+  supplier <- allocateParty "Supplier"
+  borrower <- allocateParty "Borrower"
+  merchant <- allocateParty "Merchant"
+
+  cfgCid <- submit operator do
+    createCmd ProtocolConfig with operator; config = defaultConfig usdcIssuer creditIssuer
+  pool0 <- setupPool operator usdcIssuer
+  supTok <- mintUsdc usdcIssuer supplier 1000.0
+  (pool1, _s) <- supply operator usdcIssuer supplier pool0 1000.0 supTok
+  profile0 <- openProfile operator cfgCid borrower
+
+  borrowerCollat <- mintUsdc usdcIssuer borrower 50.0
+  collatEscrow <- submit borrower do exerciseCmd borrowerCollat Token_Transfer with newOwner = operator
+  reqCid <- submit borrower do
+    createCmd BnplRequest with
+      operator; borrower; merchant
+      amount = 40.0; collateral = 50.0
+      collateralEscrowCid = collatEscrow; termSeconds = 100
+  merchFund <- findToken operator 40.0
+  (loan0, pool2, profile1, _escrow0) <- submit operator do
+    exerciseCmd reqCid BnplRequest_Accept with
+      poolCid = pool1; profileCid = profile0; configCid = cfgCid; merchantFundTokenCid = merchFund
+
+  -- time passes beyond the 100s term; operator liquidates
+  passTime (seconds 200)
+  (loan1, pool3, profile2) <- submit operator do
+    exerciseCmd loan0 Loan_Default with poolCid = pool2; profileCid = profile1
+  Some l1 <- queryContractId operator loan1
+  l1.status === Defaulted
+
+  -- debt 42 recovered from 50 collateral; 8 refunded to borrower
+  borrowerToks <- query @Token borrower
+  [ t.amount | (_, t) <- borrowerToks, t.owner == borrower ] === [8.0]
+  -- pool recovered the principal; borrower's credit is wiped
+  Some p3 <- queryContractId operator pool3
+  p3.available === 1002.0
+  p3.totalBorrowed === 0.0
+  Some pr2 <- queryContractId operator profile2
+  pr2.score === 0
+  pr2.creditLimit === 0.0

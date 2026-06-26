@@ -1,0 +1,7 @@
+sdk-version: 3.5.1
+
+# Irion BNPL — Canton/Daml port (see ../CANTON_MIGRATION.md).
+# Templates live in ./model; Daml Script tests in ./model-tests.
+packages:
+- ./model
+- ./model-tests

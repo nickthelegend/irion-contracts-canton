@@ -1,0 +1,10 @@
+sdk-version: 3.5.1
+name: irion-model-tests
+source: daml
+version: 1.0.0
+dependencies:
+  - daml-prim
+  - daml-stdlib
+  - daml-script
+data-dependencies:
+  - ../model/.daml/dist/irion-model-1.0.0.dar

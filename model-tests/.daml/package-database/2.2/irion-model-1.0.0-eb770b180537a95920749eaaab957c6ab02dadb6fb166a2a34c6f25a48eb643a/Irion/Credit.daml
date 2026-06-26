@@ -1,0 +1,316 @@
+{-# LANGUAGE NoDamlSyntax #-}
+{-# LANGUAGE NoImplicitPrelude #-}
+{-# LANGUAGE NoOverloadedStrings #-}
+{-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE MagicHash #-}
+{-# LANGUAGE DatatypeContexts #-}
+{-# OPTIONS_GHC -Wno-unused-imports -Wno-missing-methods -Wno-deprecations -Wno-x-crypto -Wno-x-exceptions #-}
+module Irion.Credit (
+        type Irion.Credit.CreditProfile(Irion.Credit.CreditProfile,
+                                        borrower, creditLimit, operator, outstanding, repaidTotal,
+                                        repayments, score),
+        type Irion.Credit.CreditAttestation(Irion.Credit.CreditAttestation,
+                                            approvedLimit, borrower, creditIssuer, operator, score),
+        type Irion.Credit.Attestation_Apply(Irion.Credit.Attestation_Apply,
+                                            configCid, profileCid)
+    ) where
+import Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Desugar
+import Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Exception
+    ()
+import Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Fail
+    ()
+import Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Interface.AnyView
+    ()
+import CurrentSdk.DA.Internal.LF
+import Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Prelude
+    ()
+import Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record
+import Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Serializable.Instances
+    ()
+import CurrentSdk.DA.Internal.Template
+import Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Template.Functions
+import Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Template.Functions
+    ()
+import CurrentSdk.Data.String
+import Pkg_11978acf1971ebffa32ef626228faaf06526c0693e80117558f2abc795274368.GHC.Classes
+import CurrentSdk.GHC.Err
+import Pkg_11978acf1971ebffa32ef626228faaf06526c0693e80117558f2abc795274368.GHC.Show
+import CurrentSdk.GHC.Types
+import Irion.Config
+data Attestation_Apply
+  = Attestation_Apply {configCid :: (CurrentSdk.DA.Internal.LF.ContractId Irion.Config.ProtocolConfig),
+                       profileCid :: (CurrentSdk.DA.Internal.LF.ContractId Irion.Credit.CreditProfile)}
+data CurrentSdk.GHC.Types.DamlTemplate => CreditAttestation
+  = CreditAttestation {creditIssuer :: CurrentSdk.DA.Internal.LF.Party,
+                       operator :: CurrentSdk.DA.Internal.LF.Party,
+                       borrower :: CurrentSdk.DA.Internal.LF.Party,
+                       approvedLimit :: (CurrentSdk.GHC.Types.Numeric 10),
+                       score :: CurrentSdk.GHC.Types.Int}
+data CurrentSdk.GHC.Types.DamlTemplate => CreditProfile
+  = CreditProfile {operator :: CurrentSdk.DA.Internal.LF.Party,
+                   borrower :: CurrentSdk.DA.Internal.LF.Party,
+                   creditLimit :: (CurrentSdk.GHC.Types.Numeric 10),
+                   outstanding :: (CurrentSdk.GHC.Types.Numeric 10),
+                   repaidTotal :: (CurrentSdk.GHC.Types.Numeric 10),
+                   repayments :: CurrentSdk.GHC.Types.Int,
+                   score :: CurrentSdk.GHC.Types.Int}
+instance (() =>
+          Pkg_11978acf1971ebffa32ef626228faaf06526c0693e80117558f2abc795274368.GHC.Show.Show Irion.Credit.CreditProfile) where
+  showsPrec _ _ _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+  show _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+  showList _ _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_11978acf1971ebffa32ef626228faaf06526c0693e80117558f2abc795274368.GHC.Show.Show Irion.Credit.CreditAttestation) where
+  showsPrec _ _ _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+  show _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+  showList _ _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_11978acf1971ebffa32ef626228faaf06526c0693e80117558f2abc795274368.GHC.Show.Show Irion.Credit.Attestation_Apply) where
+  showsPrec _ _ _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+  show _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+  showList _ _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record.SetField "score" Irion.Credit.CreditProfile CurrentSdk.GHC.Types.Int)
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record.SetField "score" Irion.Credit.CreditAttestation CurrentSdk.GHC.Types.Int)
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record.SetField "repayments" Irion.Credit.CreditProfile CurrentSdk.GHC.Types.Int)
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record.SetField "repaidTotal" Irion.Credit.CreditProfile (CurrentSdk.GHC.Types.Numeric 10))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record.SetField "profileCid" Irion.Credit.Attestation_Apply (CurrentSdk.DA.Internal.LF.ContractId Irion.Credit.CreditProfile))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record.SetField "outstanding" Irion.Credit.CreditProfile (CurrentSdk.GHC.Types.Numeric 10))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record.SetField "operator" Irion.Credit.CreditProfile CurrentSdk.DA.Internal.LF.Party)
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record.SetField "operator" Irion.Credit.CreditAttestation CurrentSdk.DA.Internal.LF.Party)
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record.SetField "creditLimit" Irion.Credit.CreditProfile (CurrentSdk.GHC.Types.Numeric 10))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record.SetField "creditIssuer" Irion.Credit.CreditAttestation CurrentSdk.DA.Internal.LF.Party)
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record.SetField "configCid" Irion.Credit.Attestation_Apply (CurrentSdk.DA.Internal.LF.ContractId Irion.Config.ProtocolConfig))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record.SetField "borrower" Irion.Credit.CreditProfile CurrentSdk.DA.Internal.LF.Party)
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record.SetField "borrower" Irion.Credit.CreditAttestation CurrentSdk.DA.Internal.LF.Party)
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record.SetField "approvedLimit" Irion.Credit.CreditAttestation (CurrentSdk.GHC.Types.Numeric 10))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Template.Functions.HasToAnyTemplate Irion.Credit.CreditProfile) where
+  _toAnyTemplate _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Template.Functions.HasToAnyTemplate Irion.Credit.CreditAttestation) where
+  _toAnyTemplate _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Template.Functions.HasToAnyChoice Irion.Credit.CreditProfile CurrentSdk.DA.Internal.Template.Archive ()) where
+  _toAnyChoice _ _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Template.Functions.HasToAnyChoice Irion.Credit.CreditAttestation Irion.Credit.Attestation_Apply (CurrentSdk.DA.Internal.LF.ContractId Irion.Credit.CreditProfile)) where
+  _toAnyChoice _ _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Template.Functions.HasToAnyChoice Irion.Credit.CreditAttestation CurrentSdk.DA.Internal.Template.Archive ()) where
+  _toAnyChoice _ _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Template.Functions.HasTemplateTypeRep Irion.Credit.CreditProfile) where
+  _templateTypeRep _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Template.Functions.HasTemplateTypeRep Irion.Credit.CreditAttestation) where
+  _templateTypeRep _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Template.Functions.HasSignatory Irion.Credit.CreditProfile) where
+  signatory _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Template.Functions.HasSignatory Irion.Credit.CreditAttestation) where
+  signatory _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Template.Functions.HasObserver Irion.Credit.CreditProfile) where
+  observer _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Template.Functions.HasObserver Irion.Credit.CreditAttestation) where
+  observer _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Desugar.HasIsInterfaceType Irion.Credit.CreditProfile) where
+  _isInterfaceType _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Desugar.HasIsInterfaceType Irion.Credit.CreditAttestation) where
+  _isInterfaceType _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Template.Functions.HasFromAnyTemplate Irion.Credit.CreditProfile) where
+  _fromAnyTemplate _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Template.Functions.HasFromAnyTemplate Irion.Credit.CreditAttestation) where
+  _fromAnyTemplate _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Template.Functions.HasFromAnyChoice Irion.Credit.CreditProfile CurrentSdk.DA.Internal.Template.Archive ()) where
+  _fromAnyChoice _ _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Template.Functions.HasFromAnyChoice Irion.Credit.CreditAttestation Irion.Credit.Attestation_Apply (CurrentSdk.DA.Internal.LF.ContractId Irion.Credit.CreditProfile)) where
+  _fromAnyChoice _ _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Template.Functions.HasFromAnyChoice Irion.Credit.CreditAttestation CurrentSdk.DA.Internal.Template.Archive ()) where
+  _fromAnyChoice _ _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Template.Functions.HasFetch Irion.Credit.CreditProfile) where
+  fetch _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Template.Functions.HasFetch Irion.Credit.CreditAttestation) where
+  fetch _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Template.Functions.HasExercise Irion.Credit.CreditProfile CurrentSdk.DA.Internal.Template.Archive ()) where
+  exercise _ _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Template.Functions.HasExercise Irion.Credit.CreditAttestation Irion.Credit.Attestation_Apply (CurrentSdk.DA.Internal.LF.ContractId Irion.Credit.CreditProfile)) where
+  exercise _ _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Template.Functions.HasExercise Irion.Credit.CreditAttestation CurrentSdk.DA.Internal.Template.Archive ()) where
+  exercise _ _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Template.Functions.HasEnsure Irion.Credit.CreditProfile) where
+  ensure _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Template.Functions.HasEnsure Irion.Credit.CreditAttestation) where
+  ensure _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Template.Functions.HasCreate Irion.Credit.CreditProfile) where
+  create _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Template.Functions.HasCreate Irion.Credit.CreditAttestation) where
+  create _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Template.Functions.HasArchive Irion.Credit.CreditProfile) where
+  archive _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Template.Functions.HasArchive Irion.Credit.CreditAttestation) where
+  archive _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record.GetField "score" Irion.Credit.CreditProfile CurrentSdk.GHC.Types.Int)
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record.GetField "score" Irion.Credit.CreditAttestation CurrentSdk.GHC.Types.Int)
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record.GetField "repayments" Irion.Credit.CreditProfile CurrentSdk.GHC.Types.Int)
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record.GetField "repaidTotal" Irion.Credit.CreditProfile (CurrentSdk.GHC.Types.Numeric 10))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record.GetField "profileCid" Irion.Credit.Attestation_Apply (CurrentSdk.DA.Internal.LF.ContractId Irion.Credit.CreditProfile))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record.GetField "outstanding" Irion.Credit.CreditProfile (CurrentSdk.GHC.Types.Numeric 10))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record.GetField "operator" Irion.Credit.CreditProfile CurrentSdk.DA.Internal.LF.Party)
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record.GetField "operator" Irion.Credit.CreditAttestation CurrentSdk.DA.Internal.LF.Party)
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record.GetField "creditLimit" Irion.Credit.CreditProfile (CurrentSdk.GHC.Types.Numeric 10))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record.GetField "creditIssuer" Irion.Credit.CreditAttestation CurrentSdk.DA.Internal.LF.Party)
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record.GetField "configCid" Irion.Credit.Attestation_Apply (CurrentSdk.DA.Internal.LF.ContractId Irion.Config.ProtocolConfig))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record.GetField "borrower" Irion.Credit.CreditProfile CurrentSdk.DA.Internal.LF.Party)
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record.GetField "borrower" Irion.Credit.CreditAttestation CurrentSdk.DA.Internal.LF.Party)
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record.GetField "approvedLimit" Irion.Credit.CreditAttestation (CurrentSdk.GHC.Types.Numeric 10))
+instance (() =>
+          Pkg_11978acf1971ebffa32ef626228faaf06526c0693e80117558f2abc795274368.GHC.Classes.Eq Irion.Credit.CreditProfile) where
+  (==) _ _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+  (/=) _ _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_11978acf1971ebffa32ef626228faaf06526c0693e80117558f2abc795274368.GHC.Classes.Eq Irion.Credit.CreditAttestation) where
+  (==) _ _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+  (/=) _ _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_11978acf1971ebffa32ef626228faaf06526c0693e80117558f2abc795274368.GHC.Classes.Eq Irion.Credit.Attestation_Apply) where
+  (==) _ _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+  (/=) _ _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))

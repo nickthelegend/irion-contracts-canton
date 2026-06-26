@@ -1,0 +1,81 @@
+module Test.Irion.Credit where
+
+import Irion.Config
+import Irion.Credit
+import Daml.Script
+import DA.Assert ((===))
+
+-- | a baseline protocol config for tests.
+defaultConfig : Party -> Party -> Config
+defaultConfig usdcIssuer creditIssuer = Config with
+  usdcIssuer
+  creditIssuer
+  borrowInterestRate = 0.05
+  uncollatPremiumRate = 0.05
+  starterLimit = 50.0
+  maxCreditLimit = 100000.0
+  repayRewardRate = 0.10
+  minScoreUncollat = 600
+  minimumLiquidity = 1.0
+
+-- | operator onboards a borrower with the starter line (score 0).
+openProfile : Party -> ContractId ProtocolConfig -> Party -> Script (ContractId CreditProfile)
+openProfile operator cfgCid borrower = do
+  Some cfg <- queryContractId operator cfgCid
+  submit operator do
+    createCmd CreditProfile with
+      operator; borrower
+      creditLimit = cfg.config.starterLimit
+      outstanding = 0.0
+      repaidTotal = 0.0
+      repayments = 0
+      score = 0
+
+-- | A trusted issuer's attestation lifts score + credit line.
+test_attestation_lifts_credit : Script ()
+test_attestation_lifts_credit = do
+  operator <- allocateParty "Operator"
+  usdcIssuer <- allocateParty "USDC"
+  creditIssuer <- allocateParty "CreditIssuer"
+  borrower <- allocateParty "Borrower"
+
+  cfgCid <- submit operator do
+    createCmd ProtocolConfig with operator; config = defaultConfig usdcIssuer creditIssuer
+  profileCid <- openProfile operator cfgCid borrower
+  Some p0 <- queryContractId operator profileCid
+  p0.creditLimit === 50.0
+  p0.score === 0
+
+  -- trusted issuer attests score 790 / limit 3800
+  attCid <- submit creditIssuer do
+    createCmd CreditAttestation with
+      creditIssuer; operator; borrower; approvedLimit = 3800.0; score = 790
+  profileCid2 <- submit operator do
+    exerciseCmd attCid Attestation_Apply with configCid = cfgCid; profileCid
+  Some p1 <- queryContractId operator profileCid2
+  p1.score === 790
+  p1.creditLimit === 3800.0
+
+  -- replay is impossible: the attestation was consumed
+  submitMustFail operator do
+    exerciseCmd attCid Attestation_Apply with configCid = cfgCid; profileCid = profileCid2
+
+-- | A valid attestation from an UNTRUSTED issuer is rejected on-ledger.
+test_untrusted_issuer_rejected : Script ()
+test_untrusted_issuer_rejected = do
+  operator <- allocateParty "Operator"
+  usdcIssuer <- allocateParty "USDC"
+  creditIssuer <- allocateParty "CreditIssuer"
+  evil <- allocateParty "EvilIssuer"
+  borrower <- allocateParty "Borrower"
+
+  cfgCid <- submit operator do
+    createCmd ProtocolConfig with operator; config = defaultConfig usdcIssuer creditIssuer
+  profileCid <- openProfile operator cfgCid borrower
+
+  -- a perfectly-formed attestation, but signed by the wrong issuer
+  evilAtt <- submit evil do
+    createCmd CreditAttestation with
+      creditIssuer = evil; operator; borrower; approvedLimit = 999999.0; score = 850
+  submitMustFail operator do
+    exerciseCmd evilAtt Attestation_Apply with configCid = cfgCid; profileCid

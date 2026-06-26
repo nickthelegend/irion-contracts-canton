@@ -1,0 +1,8 @@
+module Irion.Types where
+
+-- | Loan lifecycle state (ports the Soroban STATUS_* constants).
+data LoanStatus
+  = Active
+  | Repaid
+  | Defaulted
+  deriving (Eq, Show)

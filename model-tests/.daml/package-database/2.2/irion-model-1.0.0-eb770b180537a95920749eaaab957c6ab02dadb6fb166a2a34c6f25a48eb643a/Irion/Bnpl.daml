@@ -1,0 +1,816 @@
+{-# LANGUAGE NoDamlSyntax #-}
+{-# LANGUAGE NoImplicitPrelude #-}
+{-# LANGUAGE NoOverloadedStrings #-}
+{-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE MagicHash #-}
+{-# LANGUAGE DatatypeContexts #-}
+{-# OPTIONS_GHC -Wno-unused-imports -Wno-missing-methods -Wno-deprecations -Wno-x-crypto -Wno-x-exceptions #-}
+module Irion.Bnpl (
+        type Irion.Bnpl.MerchantPayment(Irion.Bnpl.MerchantPayment, amount,
+                                        borrower, merchant, operator),
+        type Irion.Bnpl.Loan(Irion.Bnpl.Loan, borrower, collateral,
+                             collateralTokenCid, dueTime, merchant, operator, outstanding,
+                             principal, principalRepaid, status),
+        type Irion.Bnpl.Loan_Pay(Irion.Bnpl.Loan_Pay, amount, configCid,
+                                 payTokenCid, payer, poolCid, profileCid),
+        type Irion.Bnpl.Loan_ReleaseCollateral(Irion.Bnpl.Loan_ReleaseCollateral),
+        type Irion.Bnpl.Loan_Default(Irion.Bnpl.Loan_Default, poolCid,
+                                     profileCid),
+        type Irion.Bnpl.BnplRequest(Irion.Bnpl.BnplRequest, amount,
+                                    borrower, collateral, collateralEscrowCid, merchant, operator,
+                                    termSeconds),
+        type Irion.Bnpl.BnplRequest_Accept(Irion.Bnpl.BnplRequest_Accept,
+                                           configCid, merchantFundTokenCid, poolCid, profileCid),
+        type Irion.Bnpl.BnplRequest_Reject(Irion.Bnpl.BnplRequest_Reject),
+        type Irion.Bnpl.UnsecuredRequest(Irion.Bnpl.UnsecuredRequest,
+                                         amount, borrower, operator, termSeconds),
+        type Irion.Bnpl.UnsecuredRequest_Accept(Irion.Bnpl.UnsecuredRequest_Accept,
+                                                configCid, disburseTokenCid, poolCid, profileCid)
+    ) where
+import Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Desugar
+import Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Exception
+    ()
+import Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Fail
+    ()
+import Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Interface.AnyView
+    ()
+import CurrentSdk.DA.Internal.LF
+import CurrentSdk.DA.Internal.Prelude
+import Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Prelude
+    ()
+import Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record
+import Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Serializable.Instances
+    ()
+import CurrentSdk.DA.Internal.Template
+import Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Template.Functions
+import Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Template.Functions
+    ()
+import Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Time
+    ()
+import CurrentSdk.Data.String
+import Pkg_11978acf1971ebffa32ef626228faaf06526c0693e80117558f2abc795274368.GHC.Classes
+import CurrentSdk.GHC.Err
+import Pkg_11978acf1971ebffa32ef626228faaf06526c0693e80117558f2abc795274368.GHC.Show
+import CurrentSdk.GHC.Types
+import Irion.Config
+import Irion.Credit
+import Irion.Pool
+import Irion.Token
+import Irion.Types
+data UnsecuredRequest_Accept
+  = UnsecuredRequest_Accept {poolCid :: (CurrentSdk.DA.Internal.LF.ContractId Irion.Pool.LendingPool),
+                             profileCid :: (CurrentSdk.DA.Internal.LF.ContractId Irion.Credit.CreditProfile),
+                             configCid :: (CurrentSdk.DA.Internal.LF.ContractId Irion.Config.ProtocolConfig),
+                             disburseTokenCid :: (CurrentSdk.DA.Internal.LF.ContractId Irion.Token.Token)}
+data CurrentSdk.GHC.Types.DamlTemplate => UnsecuredRequest
+  = UnsecuredRequest {operator :: CurrentSdk.DA.Internal.LF.Party,
+                      borrower :: CurrentSdk.DA.Internal.LF.Party,
+                      amount :: (CurrentSdk.GHC.Types.Numeric 10),
+                      termSeconds :: CurrentSdk.GHC.Types.Int}
+data BnplRequest_Reject = BnplRequest_Reject {}
+data BnplRequest_Accept
+  = BnplRequest_Accept {poolCid :: (CurrentSdk.DA.Internal.LF.ContractId Irion.Pool.LendingPool),
+                        profileCid :: (CurrentSdk.DA.Internal.LF.ContractId Irion.Credit.CreditProfile),
+                        configCid :: (CurrentSdk.DA.Internal.LF.ContractId Irion.Config.ProtocolConfig),
+                        merchantFundTokenCid :: (CurrentSdk.DA.Internal.LF.ContractId Irion.Token.Token)}
+data CurrentSdk.GHC.Types.DamlTemplate => BnplRequest
+  = BnplRequest {operator :: CurrentSdk.DA.Internal.LF.Party,
+                 borrower :: CurrentSdk.DA.Internal.LF.Party,
+                 merchant :: CurrentSdk.DA.Internal.LF.Party,
+                 amount :: (CurrentSdk.GHC.Types.Numeric 10),
+                 collateral :: (CurrentSdk.GHC.Types.Numeric 10),
+                 collateralEscrowCid :: (CurrentSdk.DA.Internal.LF.ContractId Irion.Token.Token),
+                 termSeconds :: CurrentSdk.GHC.Types.Int}
+data Loan_Default
+  = Loan_Default {poolCid :: (CurrentSdk.DA.Internal.LF.ContractId Irion.Pool.LendingPool),
+                  profileCid :: (CurrentSdk.DA.Internal.LF.ContractId Irion.Credit.CreditProfile)}
+data Loan_ReleaseCollateral = Loan_ReleaseCollateral {}
+data Loan_Pay
+  = Loan_Pay {payer :: CurrentSdk.DA.Internal.LF.Party,
+              payTokenCid :: (CurrentSdk.DA.Internal.LF.ContractId Irion.Token.Token),
+              amount :: (CurrentSdk.GHC.Types.Numeric 10),
+              poolCid :: (CurrentSdk.DA.Internal.LF.ContractId Irion.Pool.LendingPool),
+              profileCid :: (CurrentSdk.DA.Internal.LF.ContractId Irion.Credit.CreditProfile),
+              configCid :: (CurrentSdk.DA.Internal.LF.ContractId Irion.Config.ProtocolConfig)}
+data CurrentSdk.GHC.Types.DamlTemplate => Loan
+  = Loan {operator :: CurrentSdk.DA.Internal.LF.Party,
+          borrower :: CurrentSdk.DA.Internal.LF.Party,
+          merchant :: CurrentSdk.DA.Internal.LF.Party,
+          principal :: (CurrentSdk.GHC.Types.Numeric 10),
+          principalRepaid :: (CurrentSdk.GHC.Types.Numeric 10),
+          outstanding :: (CurrentSdk.GHC.Types.Numeric 10),
+          collateral :: (CurrentSdk.GHC.Types.Numeric 10),
+          collateralTokenCid :: (CurrentSdk.DA.Internal.Prelude.Optional (CurrentSdk.DA.Internal.LF.ContractId Irion.Token.Token)),
+          dueTime :: CurrentSdk.DA.Internal.LF.Time,
+          status :: Irion.Types.LoanStatus}
+data CurrentSdk.GHC.Types.DamlTemplate => MerchantPayment
+  = MerchantPayment {operator :: CurrentSdk.DA.Internal.LF.Party,
+                     merchant :: CurrentSdk.DA.Internal.LF.Party,
+                     borrower :: CurrentSdk.DA.Internal.LF.Party,
+                     amount :: (CurrentSdk.GHC.Types.Numeric 10)}
+instance (() =>
+          Pkg_11978acf1971ebffa32ef626228faaf06526c0693e80117558f2abc795274368.GHC.Show.Show Irion.Bnpl.UnsecuredRequest_Accept) where
+  showsPrec _ _ _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+  show _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+  showList _ _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_11978acf1971ebffa32ef626228faaf06526c0693e80117558f2abc795274368.GHC.Show.Show Irion.Bnpl.UnsecuredRequest) where
+  showsPrec _ _ _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+  show _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+  showList _ _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_11978acf1971ebffa32ef626228faaf06526c0693e80117558f2abc795274368.GHC.Show.Show Irion.Bnpl.MerchantPayment) where
+  showsPrec _ _ _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+  show _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+  showList _ _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_11978acf1971ebffa32ef626228faaf06526c0693e80117558f2abc795274368.GHC.Show.Show Irion.Bnpl.Loan_ReleaseCollateral) where
+  showsPrec _ _ _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+  show _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+  showList _ _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_11978acf1971ebffa32ef626228faaf06526c0693e80117558f2abc795274368.GHC.Show.Show Irion.Bnpl.Loan_Pay) where
+  showsPrec _ _ _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+  show _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+  showList _ _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_11978acf1971ebffa32ef626228faaf06526c0693e80117558f2abc795274368.GHC.Show.Show Irion.Bnpl.Loan_Default) where
+  showsPrec _ _ _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+  show _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+  showList _ _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_11978acf1971ebffa32ef626228faaf06526c0693e80117558f2abc795274368.GHC.Show.Show Irion.Bnpl.Loan) where
+  showsPrec _ _ _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+  show _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+  showList _ _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_11978acf1971ebffa32ef626228faaf06526c0693e80117558f2abc795274368.GHC.Show.Show Irion.Bnpl.BnplRequest_Reject) where
+  showsPrec _ _ _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+  show _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+  showList _ _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_11978acf1971ebffa32ef626228faaf06526c0693e80117558f2abc795274368.GHC.Show.Show Irion.Bnpl.BnplRequest_Accept) where
+  showsPrec _ _ _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+  show _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+  showList _ _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_11978acf1971ebffa32ef626228faaf06526c0693e80117558f2abc795274368.GHC.Show.Show Irion.Bnpl.BnplRequest) where
+  showsPrec _ _ _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+  show _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+  showList _ _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record.SetField "termSeconds" Irion.Bnpl.UnsecuredRequest CurrentSdk.GHC.Types.Int)
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record.SetField "termSeconds" Irion.Bnpl.BnplRequest CurrentSdk.GHC.Types.Int)
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record.SetField "status" Irion.Bnpl.Loan Irion.Types.LoanStatus)
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record.SetField "profileCid" Irion.Bnpl.UnsecuredRequest_Accept (CurrentSdk.DA.Internal.LF.ContractId Irion.Credit.CreditProfile))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record.SetField "profileCid" Irion.Bnpl.Loan_Pay (CurrentSdk.DA.Internal.LF.ContractId Irion.Credit.CreditProfile))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record.SetField "profileCid" Irion.Bnpl.Loan_Default (CurrentSdk.DA.Internal.LF.ContractId Irion.Credit.CreditProfile))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record.SetField "profileCid" Irion.Bnpl.BnplRequest_Accept (CurrentSdk.DA.Internal.LF.ContractId Irion.Credit.CreditProfile))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record.SetField "principalRepaid" Irion.Bnpl.Loan (CurrentSdk.GHC.Types.Numeric 10))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record.SetField "principal" Irion.Bnpl.Loan (CurrentSdk.GHC.Types.Numeric 10))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record.SetField "poolCid" Irion.Bnpl.UnsecuredRequest_Accept (CurrentSdk.DA.Internal.LF.ContractId Irion.Pool.LendingPool))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record.SetField "poolCid" Irion.Bnpl.Loan_Pay (CurrentSdk.DA.Internal.LF.ContractId Irion.Pool.LendingPool))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record.SetField "poolCid" Irion.Bnpl.Loan_Default (CurrentSdk.DA.Internal.LF.ContractId Irion.Pool.LendingPool))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record.SetField "poolCid" Irion.Bnpl.BnplRequest_Accept (CurrentSdk.DA.Internal.LF.ContractId Irion.Pool.LendingPool))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record.SetField "payer" Irion.Bnpl.Loan_Pay CurrentSdk.DA.Internal.LF.Party)
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record.SetField "payTokenCid" Irion.Bnpl.Loan_Pay (CurrentSdk.DA.Internal.LF.ContractId Irion.Token.Token))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record.SetField "outstanding" Irion.Bnpl.Loan (CurrentSdk.GHC.Types.Numeric 10))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record.SetField "operator" Irion.Bnpl.UnsecuredRequest CurrentSdk.DA.Internal.LF.Party)
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record.SetField "operator" Irion.Bnpl.MerchantPayment CurrentSdk.DA.Internal.LF.Party)
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record.SetField "operator" Irion.Bnpl.Loan CurrentSdk.DA.Internal.LF.Party)
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record.SetField "operator" Irion.Bnpl.BnplRequest CurrentSdk.DA.Internal.LF.Party)
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record.SetField "merchantFundTokenCid" Irion.Bnpl.BnplRequest_Accept (CurrentSdk.DA.Internal.LF.ContractId Irion.Token.Token))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record.SetField "merchant" Irion.Bnpl.MerchantPayment CurrentSdk.DA.Internal.LF.Party)
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record.SetField "merchant" Irion.Bnpl.Loan CurrentSdk.DA.Internal.LF.Party)
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record.SetField "merchant" Irion.Bnpl.BnplRequest CurrentSdk.DA.Internal.LF.Party)
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record.SetField "dueTime" Irion.Bnpl.Loan CurrentSdk.DA.Internal.LF.Time)
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record.SetField "disburseTokenCid" Irion.Bnpl.UnsecuredRequest_Accept (CurrentSdk.DA.Internal.LF.ContractId Irion.Token.Token))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record.SetField "configCid" Irion.Bnpl.UnsecuredRequest_Accept (CurrentSdk.DA.Internal.LF.ContractId Irion.Config.ProtocolConfig))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record.SetField "configCid" Irion.Bnpl.Loan_Pay (CurrentSdk.DA.Internal.LF.ContractId Irion.Config.ProtocolConfig))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record.SetField "configCid" Irion.Bnpl.BnplRequest_Accept (CurrentSdk.DA.Internal.LF.ContractId Irion.Config.ProtocolConfig))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record.SetField "collateralTokenCid" Irion.Bnpl.Loan (CurrentSdk.DA.Internal.Prelude.Optional (CurrentSdk.DA.Internal.LF.ContractId Irion.Token.Token)))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record.SetField "collateralEscrowCid" Irion.Bnpl.BnplRequest (CurrentSdk.DA.Internal.LF.ContractId Irion.Token.Token))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record.SetField "collateral" Irion.Bnpl.Loan (CurrentSdk.GHC.Types.Numeric 10))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record.SetField "collateral" Irion.Bnpl.BnplRequest (CurrentSdk.GHC.Types.Numeric 10))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record.SetField "borrower" Irion.Bnpl.UnsecuredRequest CurrentSdk.DA.Internal.LF.Party)
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record.SetField "borrower" Irion.Bnpl.MerchantPayment CurrentSdk.DA.Internal.LF.Party)
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record.SetField "borrower" Irion.Bnpl.Loan CurrentSdk.DA.Internal.LF.Party)
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record.SetField "borrower" Irion.Bnpl.BnplRequest CurrentSdk.DA.Internal.LF.Party)
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record.SetField "amount" Irion.Bnpl.UnsecuredRequest (CurrentSdk.GHC.Types.Numeric 10))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record.SetField "amount" Irion.Bnpl.MerchantPayment (CurrentSdk.GHC.Types.Numeric 10))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record.SetField "amount" Irion.Bnpl.Loan_Pay (CurrentSdk.GHC.Types.Numeric 10))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record.SetField "amount" Irion.Bnpl.BnplRequest (CurrentSdk.GHC.Types.Numeric 10))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Template.Functions.HasToAnyTemplate Irion.Bnpl.UnsecuredRequest) where
+  _toAnyTemplate _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Template.Functions.HasToAnyTemplate Irion.Bnpl.MerchantPayment) where
+  _toAnyTemplate _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Template.Functions.HasToAnyTemplate Irion.Bnpl.Loan) where
+  _toAnyTemplate _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Template.Functions.HasToAnyTemplate Irion.Bnpl.BnplRequest) where
+  _toAnyTemplate _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Template.Functions.HasToAnyChoice Irion.Bnpl.UnsecuredRequest Irion.Bnpl.UnsecuredRequest_Accept ((((,,) (CurrentSdk.DA.Internal.LF.ContractId Irion.Bnpl.Loan)) (CurrentSdk.DA.Internal.LF.ContractId Irion.Pool.LendingPool)) (CurrentSdk.DA.Internal.LF.ContractId Irion.Credit.CreditProfile))) where
+  _toAnyChoice _ _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Template.Functions.HasToAnyChoice Irion.Bnpl.UnsecuredRequest CurrentSdk.DA.Internal.Template.Archive ()) where
+  _toAnyChoice _ _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Template.Functions.HasToAnyChoice Irion.Bnpl.MerchantPayment CurrentSdk.DA.Internal.Template.Archive ()) where
+  _toAnyChoice _ _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Template.Functions.HasToAnyChoice Irion.Bnpl.Loan Irion.Bnpl.Loan_ReleaseCollateral (CurrentSdk.DA.Internal.LF.ContractId Irion.Token.Token)) where
+  _toAnyChoice _ _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Template.Functions.HasToAnyChoice Irion.Bnpl.Loan Irion.Bnpl.Loan_Pay ((((,,) (CurrentSdk.DA.Internal.LF.ContractId Irion.Bnpl.Loan)) (CurrentSdk.DA.Internal.LF.ContractId Irion.Pool.LendingPool)) (CurrentSdk.DA.Internal.LF.ContractId Irion.Credit.CreditProfile))) where
+  _toAnyChoice _ _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Template.Functions.HasToAnyChoice Irion.Bnpl.Loan Irion.Bnpl.Loan_Default ((((,,) (CurrentSdk.DA.Internal.LF.ContractId Irion.Bnpl.Loan)) (CurrentSdk.DA.Internal.LF.ContractId Irion.Pool.LendingPool)) (CurrentSdk.DA.Internal.LF.ContractId Irion.Credit.CreditProfile))) where
+  _toAnyChoice _ _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Template.Functions.HasToAnyChoice Irion.Bnpl.Loan CurrentSdk.DA.Internal.Template.Archive ()) where
+  _toAnyChoice _ _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Template.Functions.HasToAnyChoice Irion.Bnpl.BnplRequest Irion.Bnpl.BnplRequest_Reject (CurrentSdk.DA.Internal.LF.ContractId Irion.Token.Token)) where
+  _toAnyChoice _ _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Template.Functions.HasToAnyChoice Irion.Bnpl.BnplRequest Irion.Bnpl.BnplRequest_Accept (((((,,,) (CurrentSdk.DA.Internal.LF.ContractId Irion.Bnpl.Loan)) (CurrentSdk.DA.Internal.LF.ContractId Irion.Pool.LendingPool)) (CurrentSdk.DA.Internal.LF.ContractId Irion.Credit.CreditProfile)) (CurrentSdk.DA.Internal.LF.ContractId Irion.Bnpl.MerchantPayment))) where
+  _toAnyChoice _ _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Template.Functions.HasToAnyChoice Irion.Bnpl.BnplRequest CurrentSdk.DA.Internal.Template.Archive ()) where
+  _toAnyChoice _ _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Template.Functions.HasTemplateTypeRep Irion.Bnpl.UnsecuredRequest) where
+  _templateTypeRep _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Template.Functions.HasTemplateTypeRep Irion.Bnpl.MerchantPayment) where
+  _templateTypeRep _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Template.Functions.HasTemplateTypeRep Irion.Bnpl.Loan) where
+  _templateTypeRep _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Template.Functions.HasTemplateTypeRep Irion.Bnpl.BnplRequest) where
+  _templateTypeRep _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Template.Functions.HasSignatory Irion.Bnpl.UnsecuredRequest) where
+  signatory _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Template.Functions.HasSignatory Irion.Bnpl.MerchantPayment) where
+  signatory _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Template.Functions.HasSignatory Irion.Bnpl.Loan) where
+  signatory _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Template.Functions.HasSignatory Irion.Bnpl.BnplRequest) where
+  signatory _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Template.Functions.HasObserver Irion.Bnpl.UnsecuredRequest) where
+  observer _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Template.Functions.HasObserver Irion.Bnpl.MerchantPayment) where
+  observer _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Template.Functions.HasObserver Irion.Bnpl.Loan) where
+  observer _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Template.Functions.HasObserver Irion.Bnpl.BnplRequest) where
+  observer _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Desugar.HasIsInterfaceType Irion.Bnpl.UnsecuredRequest) where
+  _isInterfaceType _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Desugar.HasIsInterfaceType Irion.Bnpl.MerchantPayment) where
+  _isInterfaceType _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Desugar.HasIsInterfaceType Irion.Bnpl.Loan) where
+  _isInterfaceType _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Desugar.HasIsInterfaceType Irion.Bnpl.BnplRequest) where
+  _isInterfaceType _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Template.Functions.HasFromAnyTemplate Irion.Bnpl.UnsecuredRequest) where
+  _fromAnyTemplate _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Template.Functions.HasFromAnyTemplate Irion.Bnpl.MerchantPayment) where
+  _fromAnyTemplate _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Template.Functions.HasFromAnyTemplate Irion.Bnpl.Loan) where
+  _fromAnyTemplate _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Template.Functions.HasFromAnyTemplate Irion.Bnpl.BnplRequest) where
+  _fromAnyTemplate _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Template.Functions.HasFromAnyChoice Irion.Bnpl.UnsecuredRequest Irion.Bnpl.UnsecuredRequest_Accept ((((,,) (CurrentSdk.DA.Internal.LF.ContractId Irion.Bnpl.Loan)) (CurrentSdk.DA.Internal.LF.ContractId Irion.Pool.LendingPool)) (CurrentSdk.DA.Internal.LF.ContractId Irion.Credit.CreditProfile))) where
+  _fromAnyChoice _ _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Template.Functions.HasFromAnyChoice Irion.Bnpl.UnsecuredRequest CurrentSdk.DA.Internal.Template.Archive ()) where
+  _fromAnyChoice _ _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Template.Functions.HasFromAnyChoice Irion.Bnpl.MerchantPayment CurrentSdk.DA.Internal.Template.Archive ()) where
+  _fromAnyChoice _ _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Template.Functions.HasFromAnyChoice Irion.Bnpl.Loan Irion.Bnpl.Loan_ReleaseCollateral (CurrentSdk.DA.Internal.LF.ContractId Irion.Token.Token)) where
+  _fromAnyChoice _ _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Template.Functions.HasFromAnyChoice Irion.Bnpl.Loan Irion.Bnpl.Loan_Pay ((((,,) (CurrentSdk.DA.Internal.LF.ContractId Irion.Bnpl.Loan)) (CurrentSdk.DA.Internal.LF.ContractId Irion.Pool.LendingPool)) (CurrentSdk.DA.Internal.LF.ContractId Irion.Credit.CreditProfile))) where
+  _fromAnyChoice _ _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Template.Functions.HasFromAnyChoice Irion.Bnpl.Loan Irion.Bnpl.Loan_Default ((((,,) (CurrentSdk.DA.Internal.LF.ContractId Irion.Bnpl.Loan)) (CurrentSdk.DA.Internal.LF.ContractId Irion.Pool.LendingPool)) (CurrentSdk.DA.Internal.LF.ContractId Irion.Credit.CreditProfile))) where
+  _fromAnyChoice _ _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Template.Functions.HasFromAnyChoice Irion.Bnpl.Loan CurrentSdk.DA.Internal.Template.Archive ()) where
+  _fromAnyChoice _ _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Template.Functions.HasFromAnyChoice Irion.Bnpl.BnplRequest Irion.Bnpl.BnplRequest_Reject (CurrentSdk.DA.Internal.LF.ContractId Irion.Token.Token)) where
+  _fromAnyChoice _ _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Template.Functions.HasFromAnyChoice Irion.Bnpl.BnplRequest Irion.Bnpl.BnplRequest_Accept (((((,,,) (CurrentSdk.DA.Internal.LF.ContractId Irion.Bnpl.Loan)) (CurrentSdk.DA.Internal.LF.ContractId Irion.Pool.LendingPool)) (CurrentSdk.DA.Internal.LF.ContractId Irion.Credit.CreditProfile)) (CurrentSdk.DA.Internal.LF.ContractId Irion.Bnpl.MerchantPayment))) where
+  _fromAnyChoice _ _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Template.Functions.HasFromAnyChoice Irion.Bnpl.BnplRequest CurrentSdk.DA.Internal.Template.Archive ()) where
+  _fromAnyChoice _ _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Template.Functions.HasFetch Irion.Bnpl.UnsecuredRequest) where
+  fetch _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Template.Functions.HasFetch Irion.Bnpl.MerchantPayment) where
+  fetch _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Template.Functions.HasFetch Irion.Bnpl.Loan) where
+  fetch _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Template.Functions.HasFetch Irion.Bnpl.BnplRequest) where
+  fetch _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Template.Functions.HasExercise Irion.Bnpl.UnsecuredRequest Irion.Bnpl.UnsecuredRequest_Accept ((((,,) (CurrentSdk.DA.Internal.LF.ContractId Irion.Bnpl.Loan)) (CurrentSdk.DA.Internal.LF.ContractId Irion.Pool.LendingPool)) (CurrentSdk.DA.Internal.LF.ContractId Irion.Credit.CreditProfile))) where
+  exercise _ _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Template.Functions.HasExercise Irion.Bnpl.UnsecuredRequest CurrentSdk.DA.Internal.Template.Archive ()) where
+  exercise _ _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Template.Functions.HasExercise Irion.Bnpl.MerchantPayment CurrentSdk.DA.Internal.Template.Archive ()) where
+  exercise _ _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Template.Functions.HasExercise Irion.Bnpl.Loan Irion.Bnpl.Loan_ReleaseCollateral (CurrentSdk.DA.Internal.LF.ContractId Irion.Token.Token)) where
+  exercise _ _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Template.Functions.HasExercise Irion.Bnpl.Loan Irion.Bnpl.Loan_Pay ((((,,) (CurrentSdk.DA.Internal.LF.ContractId Irion.Bnpl.Loan)) (CurrentSdk.DA.Internal.LF.ContractId Irion.Pool.LendingPool)) (CurrentSdk.DA.Internal.LF.ContractId Irion.Credit.CreditProfile))) where
+  exercise _ _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Template.Functions.HasExercise Irion.Bnpl.Loan Irion.Bnpl.Loan_Default ((((,,) (CurrentSdk.DA.Internal.LF.ContractId Irion.Bnpl.Loan)) (CurrentSdk.DA.Internal.LF.ContractId Irion.Pool.LendingPool)) (CurrentSdk.DA.Internal.LF.ContractId Irion.Credit.CreditProfile))) where
+  exercise _ _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Template.Functions.HasExercise Irion.Bnpl.Loan CurrentSdk.DA.Internal.Template.Archive ()) where
+  exercise _ _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Template.Functions.HasExercise Irion.Bnpl.BnplRequest Irion.Bnpl.BnplRequest_Reject (CurrentSdk.DA.Internal.LF.ContractId Irion.Token.Token)) where
+  exercise _ _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Template.Functions.HasExercise Irion.Bnpl.BnplRequest Irion.Bnpl.BnplRequest_Accept (((((,,,) (CurrentSdk.DA.Internal.LF.ContractId Irion.Bnpl.Loan)) (CurrentSdk.DA.Internal.LF.ContractId Irion.Pool.LendingPool)) (CurrentSdk.DA.Internal.LF.ContractId Irion.Credit.CreditProfile)) (CurrentSdk.DA.Internal.LF.ContractId Irion.Bnpl.MerchantPayment))) where
+  exercise _ _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Template.Functions.HasExercise Irion.Bnpl.BnplRequest CurrentSdk.DA.Internal.Template.Archive ()) where
+  exercise _ _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Template.Functions.HasEnsure Irion.Bnpl.UnsecuredRequest) where
+  ensure _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Template.Functions.HasEnsure Irion.Bnpl.MerchantPayment) where
+  ensure _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Template.Functions.HasEnsure Irion.Bnpl.Loan) where
+  ensure _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Template.Functions.HasEnsure Irion.Bnpl.BnplRequest) where
+  ensure _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Template.Functions.HasCreate Irion.Bnpl.UnsecuredRequest) where
+  create _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Template.Functions.HasCreate Irion.Bnpl.MerchantPayment) where
+  create _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Template.Functions.HasCreate Irion.Bnpl.Loan) where
+  create _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Template.Functions.HasCreate Irion.Bnpl.BnplRequest) where
+  create _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Template.Functions.HasArchive Irion.Bnpl.UnsecuredRequest) where
+  archive _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Template.Functions.HasArchive Irion.Bnpl.MerchantPayment) where
+  archive _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Template.Functions.HasArchive Irion.Bnpl.Loan) where
+  archive _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Template.Functions.HasArchive Irion.Bnpl.BnplRequest) where
+  archive _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record.GetField "termSeconds" Irion.Bnpl.UnsecuredRequest CurrentSdk.GHC.Types.Int)
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record.GetField "termSeconds" Irion.Bnpl.BnplRequest CurrentSdk.GHC.Types.Int)
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record.GetField "status" Irion.Bnpl.Loan Irion.Types.LoanStatus)
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record.GetField "profileCid" Irion.Bnpl.UnsecuredRequest_Accept (CurrentSdk.DA.Internal.LF.ContractId Irion.Credit.CreditProfile))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record.GetField "profileCid" Irion.Bnpl.Loan_Pay (CurrentSdk.DA.Internal.LF.ContractId Irion.Credit.CreditProfile))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record.GetField "profileCid" Irion.Bnpl.Loan_Default (CurrentSdk.DA.Internal.LF.ContractId Irion.Credit.CreditProfile))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record.GetField "profileCid" Irion.Bnpl.BnplRequest_Accept (CurrentSdk.DA.Internal.LF.ContractId Irion.Credit.CreditProfile))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record.GetField "principalRepaid" Irion.Bnpl.Loan (CurrentSdk.GHC.Types.Numeric 10))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record.GetField "principal" Irion.Bnpl.Loan (CurrentSdk.GHC.Types.Numeric 10))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record.GetField "poolCid" Irion.Bnpl.UnsecuredRequest_Accept (CurrentSdk.DA.Internal.LF.ContractId Irion.Pool.LendingPool))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record.GetField "poolCid" Irion.Bnpl.Loan_Pay (CurrentSdk.DA.Internal.LF.ContractId Irion.Pool.LendingPool))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record.GetField "poolCid" Irion.Bnpl.Loan_Default (CurrentSdk.DA.Internal.LF.ContractId Irion.Pool.LendingPool))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record.GetField "poolCid" Irion.Bnpl.BnplRequest_Accept (CurrentSdk.DA.Internal.LF.ContractId Irion.Pool.LendingPool))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record.GetField "payer" Irion.Bnpl.Loan_Pay CurrentSdk.DA.Internal.LF.Party)
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record.GetField "payTokenCid" Irion.Bnpl.Loan_Pay (CurrentSdk.DA.Internal.LF.ContractId Irion.Token.Token))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record.GetField "outstanding" Irion.Bnpl.Loan (CurrentSdk.GHC.Types.Numeric 10))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record.GetField "operator" Irion.Bnpl.UnsecuredRequest CurrentSdk.DA.Internal.LF.Party)
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record.GetField "operator" Irion.Bnpl.MerchantPayment CurrentSdk.DA.Internal.LF.Party)
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record.GetField "operator" Irion.Bnpl.Loan CurrentSdk.DA.Internal.LF.Party)
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record.GetField "operator" Irion.Bnpl.BnplRequest CurrentSdk.DA.Internal.LF.Party)
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record.GetField "merchantFundTokenCid" Irion.Bnpl.BnplRequest_Accept (CurrentSdk.DA.Internal.LF.ContractId Irion.Token.Token))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record.GetField "merchant" Irion.Bnpl.MerchantPayment CurrentSdk.DA.Internal.LF.Party)
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record.GetField "merchant" Irion.Bnpl.Loan CurrentSdk.DA.Internal.LF.Party)
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record.GetField "merchant" Irion.Bnpl.BnplRequest CurrentSdk.DA.Internal.LF.Party)
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record.GetField "dueTime" Irion.Bnpl.Loan CurrentSdk.DA.Internal.LF.Time)
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record.GetField "disburseTokenCid" Irion.Bnpl.UnsecuredRequest_Accept (CurrentSdk.DA.Internal.LF.ContractId Irion.Token.Token))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record.GetField "configCid" Irion.Bnpl.UnsecuredRequest_Accept (CurrentSdk.DA.Internal.LF.ContractId Irion.Config.ProtocolConfig))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record.GetField "configCid" Irion.Bnpl.Loan_Pay (CurrentSdk.DA.Internal.LF.ContractId Irion.Config.ProtocolConfig))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record.GetField "configCid" Irion.Bnpl.BnplRequest_Accept (CurrentSdk.DA.Internal.LF.ContractId Irion.Config.ProtocolConfig))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record.GetField "collateralTokenCid" Irion.Bnpl.Loan (CurrentSdk.DA.Internal.Prelude.Optional (CurrentSdk.DA.Internal.LF.ContractId Irion.Token.Token)))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record.GetField "collateralEscrowCid" Irion.Bnpl.BnplRequest (CurrentSdk.DA.Internal.LF.ContractId Irion.Token.Token))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record.GetField "collateral" Irion.Bnpl.Loan (CurrentSdk.GHC.Types.Numeric 10))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record.GetField "collateral" Irion.Bnpl.BnplRequest (CurrentSdk.GHC.Types.Numeric 10))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record.GetField "borrower" Irion.Bnpl.UnsecuredRequest CurrentSdk.DA.Internal.LF.Party)
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record.GetField "borrower" Irion.Bnpl.MerchantPayment CurrentSdk.DA.Internal.LF.Party)
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record.GetField "borrower" Irion.Bnpl.Loan CurrentSdk.DA.Internal.LF.Party)
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record.GetField "borrower" Irion.Bnpl.BnplRequest CurrentSdk.DA.Internal.LF.Party)
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record.GetField "amount" Irion.Bnpl.UnsecuredRequest (CurrentSdk.GHC.Types.Numeric 10))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record.GetField "amount" Irion.Bnpl.MerchantPayment (CurrentSdk.GHC.Types.Numeric 10))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record.GetField "amount" Irion.Bnpl.Loan_Pay (CurrentSdk.GHC.Types.Numeric 10))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record.GetField "amount" Irion.Bnpl.BnplRequest (CurrentSdk.GHC.Types.Numeric 10))
+instance (() =>
+          Pkg_11978acf1971ebffa32ef626228faaf06526c0693e80117558f2abc795274368.GHC.Classes.Eq Irion.Bnpl.UnsecuredRequest_Accept) where
+  (==) _ _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+  (/=) _ _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_11978acf1971ebffa32ef626228faaf06526c0693e80117558f2abc795274368.GHC.Classes.Eq Irion.Bnpl.UnsecuredRequest) where
+  (==) _ _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+  (/=) _ _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_11978acf1971ebffa32ef626228faaf06526c0693e80117558f2abc795274368.GHC.Classes.Eq Irion.Bnpl.MerchantPayment) where
+  (==) _ _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+  (/=) _ _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_11978acf1971ebffa32ef626228faaf06526c0693e80117558f2abc795274368.GHC.Classes.Eq Irion.Bnpl.Loan_ReleaseCollateral) where
+  (==) _ _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+  (/=) _ _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_11978acf1971ebffa32ef626228faaf06526c0693e80117558f2abc795274368.GHC.Classes.Eq Irion.Bnpl.Loan_Pay) where
+  (==) _ _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+  (/=) _ _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_11978acf1971ebffa32ef626228faaf06526c0693e80117558f2abc795274368.GHC.Classes.Eq Irion.Bnpl.Loan_Default) where
+  (==) _ _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+  (/=) _ _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_11978acf1971ebffa32ef626228faaf06526c0693e80117558f2abc795274368.GHC.Classes.Eq Irion.Bnpl.Loan) where
+  (==) _ _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+  (/=) _ _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_11978acf1971ebffa32ef626228faaf06526c0693e80117558f2abc795274368.GHC.Classes.Eq Irion.Bnpl.BnplRequest_Reject) where
+  (==) _ _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+  (/=) _ _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_11978acf1971ebffa32ef626228faaf06526c0693e80117558f2abc795274368.GHC.Classes.Eq Irion.Bnpl.BnplRequest_Accept) where
+  (==) _ _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+  (/=) _ _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_11978acf1971ebffa32ef626228faaf06526c0693e80117558f2abc795274368.GHC.Classes.Eq Irion.Bnpl.BnplRequest) where
+  (==) _ _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+  (/=) _ _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))

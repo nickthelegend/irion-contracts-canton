@@ -1,0 +1,37 @@
+-- | Protocol configuration (ports the Soroban `Config` + admin).
+--
+-- The `verifier` and `blend_pool` fields are gone: there is no on-chain ZK
+-- verifier on Canton (privacy is native), and Blend has no Canton equivalent
+-- (yield is operator/oracle-injected). `creditIssuer` replaces the pinned
+-- BabyJubJub key — it is simply the trusted issuer `Party` whose signature on a
+-- `CreditAttestation` is honoured.
+module Irion.Config where
+
+-- | All protocol parameters. Rates are decimal fractions (0.05 = 5%).
+data Config = Config with
+    usdcIssuer : Party             -- the trusted USDC issuer
+    creditIssuer : Party           -- trusted credit attestor (replaces the pinned ZK issuer key)
+    borrowInterestRate : Decimal   -- BNPL interest, e.g. 0.05
+    uncollatPremiumRate : Decimal  -- extra rate for unsecured borrow, e.g. 0.05
+    starterLimit : Decimal         -- starter credit line, 50.0 USDC
+    maxCreditLimit : Decimal       -- cap on any credit line
+    repayRewardRate : Decimal      -- credit-limit growth per repaid principal, 0.10
+    minScoreUncollat : Int         -- score gate for unsecured borrow, 600
+    minimumLiquidity : Decimal     -- pool donation-attack guard
+  deriving (Eq, Show)
+
+-- | Operator-held configuration contract.
+template ProtocolConfig
+  with
+    operator : Party
+    config : Config
+  where
+    signatory operator
+
+    -- NOTE: like the Soroban admin, the operator can change the trusted issuer /
+    -- USDC / rates here — a centralisation risk; production should timelock +
+    -- multisig this. An archive+create is observable as an audit event.
+    choice Config_Update : ContractId ProtocolConfig
+      with newConfig : Config
+      controller operator
+      do create this with config = newConfig

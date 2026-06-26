@@ -1,0 +1,258 @@
+{-# LANGUAGE NoDamlSyntax #-}
+{-# LANGUAGE NoImplicitPrelude #-}
+{-# LANGUAGE NoOverloadedStrings #-}
+{-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE MagicHash #-}
+{-# LANGUAGE DatatypeContexts #-}
+{-# OPTIONS_GHC -Wno-unused-imports -Wno-missing-methods -Wno-deprecations -Wno-x-crypto -Wno-x-exceptions #-}
+module Irion.Token (
+        type Irion.Token.Token(Irion.Token.Token, amount, issuer, owner),
+        type Irion.Token.Token_Transfer(Irion.Token.Token_Transfer,
+                                        newOwner),
+        type Irion.Token.Token_Split(Irion.Token.Token_Split, splitAmount),
+        type Irion.Token.Token_Merge(Irion.Token.Token_Merge, otherCid)
+    ) where
+import Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Desugar
+import Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Exception
+    ()
+import Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Fail
+    ()
+import Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Interface.AnyView
+    ()
+import CurrentSdk.DA.Internal.LF
+import Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Prelude
+    ()
+import Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record
+import Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Serializable.Instances
+    ()
+import CurrentSdk.DA.Internal.Template
+import Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Template.Functions
+import Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Template.Functions
+    ()
+import CurrentSdk.Data.String
+import Pkg_11978acf1971ebffa32ef626228faaf06526c0693e80117558f2abc795274368.GHC.Classes
+import CurrentSdk.GHC.Err
+import Pkg_11978acf1971ebffa32ef626228faaf06526c0693e80117558f2abc795274368.GHC.Show
+import CurrentSdk.GHC.Types
+data Token_Merge
+  = Token_Merge {otherCid :: (CurrentSdk.DA.Internal.LF.ContractId Irion.Token.Token)}
+data Token_Split
+  = Token_Split {splitAmount :: (CurrentSdk.GHC.Types.Numeric 10)}
+data Token_Transfer
+  = Token_Transfer {newOwner :: CurrentSdk.DA.Internal.LF.Party}
+data CurrentSdk.GHC.Types.DamlTemplate => Token
+  = Token {issuer :: CurrentSdk.DA.Internal.LF.Party,
+           owner :: CurrentSdk.DA.Internal.LF.Party,
+           amount :: (CurrentSdk.GHC.Types.Numeric 10)}
+instance (() =>
+          Pkg_11978acf1971ebffa32ef626228faaf06526c0693e80117558f2abc795274368.GHC.Show.Show Irion.Token.Token_Transfer) where
+  showsPrec _ _ _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+  show _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+  showList _ _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_11978acf1971ebffa32ef626228faaf06526c0693e80117558f2abc795274368.GHC.Show.Show Irion.Token.Token_Split) where
+  showsPrec _ _ _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+  show _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+  showList _ _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_11978acf1971ebffa32ef626228faaf06526c0693e80117558f2abc795274368.GHC.Show.Show Irion.Token.Token_Merge) where
+  showsPrec _ _ _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+  show _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+  showList _ _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_11978acf1971ebffa32ef626228faaf06526c0693e80117558f2abc795274368.GHC.Show.Show Irion.Token.Token) where
+  showsPrec _ _ _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+  show _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+  showList _ _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record.SetField "splitAmount" Irion.Token.Token_Split (CurrentSdk.GHC.Types.Numeric 10))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record.SetField "owner" Irion.Token.Token CurrentSdk.DA.Internal.LF.Party)
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record.SetField "otherCid" Irion.Token.Token_Merge (CurrentSdk.DA.Internal.LF.ContractId Irion.Token.Token))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record.SetField "newOwner" Irion.Token.Token_Transfer CurrentSdk.DA.Internal.LF.Party)
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record.SetField "issuer" Irion.Token.Token CurrentSdk.DA.Internal.LF.Party)
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record.SetField "amount" Irion.Token.Token (CurrentSdk.GHC.Types.Numeric 10))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Template.Functions.HasToAnyTemplate Irion.Token.Token) where
+  _toAnyTemplate _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Template.Functions.HasToAnyChoice Irion.Token.Token Irion.Token.Token_Transfer (CurrentSdk.DA.Internal.LF.ContractId Irion.Token.Token)) where
+  _toAnyChoice _ _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Template.Functions.HasToAnyChoice Irion.Token.Token Irion.Token.Token_Split (((,) (CurrentSdk.DA.Internal.LF.ContractId Irion.Token.Token)) (CurrentSdk.DA.Internal.LF.ContractId Irion.Token.Token))) where
+  _toAnyChoice _ _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Template.Functions.HasToAnyChoice Irion.Token.Token Irion.Token.Token_Merge (CurrentSdk.DA.Internal.LF.ContractId Irion.Token.Token)) where
+  _toAnyChoice _ _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Template.Functions.HasToAnyChoice Irion.Token.Token CurrentSdk.DA.Internal.Template.Archive ()) where
+  _toAnyChoice _ _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Template.Functions.HasTemplateTypeRep Irion.Token.Token) where
+  _templateTypeRep _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Template.Functions.HasSignatory Irion.Token.Token) where
+  signatory _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Template.Functions.HasObserver Irion.Token.Token) where
+  observer _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Desugar.HasIsInterfaceType Irion.Token.Token) where
+  _isInterfaceType _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Template.Functions.HasFromAnyTemplate Irion.Token.Token) where
+  _fromAnyTemplate _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Template.Functions.HasFromAnyChoice Irion.Token.Token Irion.Token.Token_Transfer (CurrentSdk.DA.Internal.LF.ContractId Irion.Token.Token)) where
+  _fromAnyChoice _ _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Template.Functions.HasFromAnyChoice Irion.Token.Token Irion.Token.Token_Split (((,) (CurrentSdk.DA.Internal.LF.ContractId Irion.Token.Token)) (CurrentSdk.DA.Internal.LF.ContractId Irion.Token.Token))) where
+  _fromAnyChoice _ _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Template.Functions.HasFromAnyChoice Irion.Token.Token Irion.Token.Token_Merge (CurrentSdk.DA.Internal.LF.ContractId Irion.Token.Token)) where
+  _fromAnyChoice _ _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Template.Functions.HasFromAnyChoice Irion.Token.Token CurrentSdk.DA.Internal.Template.Archive ()) where
+  _fromAnyChoice _ _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Template.Functions.HasFetch Irion.Token.Token) where
+  fetch _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Template.Functions.HasExercise Irion.Token.Token Irion.Token.Token_Transfer (CurrentSdk.DA.Internal.LF.ContractId Irion.Token.Token)) where
+  exercise _ _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Template.Functions.HasExercise Irion.Token.Token Irion.Token.Token_Split (((,) (CurrentSdk.DA.Internal.LF.ContractId Irion.Token.Token)) (CurrentSdk.DA.Internal.LF.ContractId Irion.Token.Token))) where
+  exercise _ _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Template.Functions.HasExercise Irion.Token.Token Irion.Token.Token_Merge (CurrentSdk.DA.Internal.LF.ContractId Irion.Token.Token)) where
+  exercise _ _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Template.Functions.HasExercise Irion.Token.Token CurrentSdk.DA.Internal.Template.Archive ()) where
+  exercise _ _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Template.Functions.HasEnsure Irion.Token.Token) where
+  ensure _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Template.Functions.HasCreate Irion.Token.Token) where
+  create _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Template.Functions.HasArchive Irion.Token.Token) where
+  archive _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record.GetField "splitAmount" Irion.Token.Token_Split (CurrentSdk.GHC.Types.Numeric 10))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record.GetField "owner" Irion.Token.Token CurrentSdk.DA.Internal.LF.Party)
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record.GetField "otherCid" Irion.Token.Token_Merge (CurrentSdk.DA.Internal.LF.ContractId Irion.Token.Token))
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record.GetField "newOwner" Irion.Token.Token_Transfer CurrentSdk.DA.Internal.LF.Party)
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record.GetField "issuer" Irion.Token.Token CurrentSdk.DA.Internal.LF.Party)
+instance (() =>
+          Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Record.GetField "amount" Irion.Token.Token (CurrentSdk.GHC.Types.Numeric 10))
+instance (() =>
+          Pkg_11978acf1971ebffa32ef626228faaf06526c0693e80117558f2abc795274368.GHC.Classes.Eq Irion.Token.Token_Transfer) where
+  (==) _ _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+  (/=) _ _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_11978acf1971ebffa32ef626228faaf06526c0693e80117558f2abc795274368.GHC.Classes.Eq Irion.Token.Token_Split) where
+  (==) _ _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+  (/=) _ _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_11978acf1971ebffa32ef626228faaf06526c0693e80117558f2abc795274368.GHC.Classes.Eq Irion.Token.Token_Merge) where
+  (==) _ _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+  (/=) _ _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_11978acf1971ebffa32ef626228faaf06526c0693e80117558f2abc795274368.GHC.Classes.Eq Irion.Token.Token) where
+  (==) _ _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+  (/=) _ _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))

@@ -1,0 +1,67 @@
+-- | Private credit (ports the Soroban `apply_zk_score` + credit profile).
+--
+-- THE BIG SIMPLIFICATION: on Stellar a borrower proved `score >= 600` over
+-- private financials with a Groth16/BN254 ZK proof, issuer-attested in-circuit
+-- (EdDSA), verified on-chain. On Canton, the ledger is private by construction,
+-- so the trusted credit issuer simply *signs* a `CreditAttestation` carrying the
+-- derived `approvedLimit` + `score`. It is visible only to the borrower and the
+-- operator (sub-transaction privacy); the raw financials never become a
+-- contract at all. Soundness that Groth16 gave us is intrinsic here: contract
+-- authentication means a borrower cannot forge an attestation the issuer did not
+-- sign, and `Attestation_Apply` checks the signer is the *trusted* issuer.
+module Irion.Credit where
+
+import Irion.Config
+
+-- | The operator's record of a borrower's standing. Operator-signed (its
+-- internal ledger); the borrower observes. Obligations live on the `Loan`.
+template CreditProfile
+  with
+    operator : Party
+    borrower : Party
+    creditLimit : Decimal
+    outstanding : Decimal
+    repaidTotal : Decimal
+    repayments : Int
+    score : Int
+  where
+    signatory operator
+    observer borrower
+    ensure creditLimit >= 0.0 && outstanding >= 0.0
+
+-- | An issuer-signed credit attestation — the ZK-proof replacement.
+-- Visible only to its stakeholders: the issuer (signatory), the borrower and
+-- the operator (observers). The raw income/debt inputs are never on-ledger.
+template CreditAttestation
+  with
+    creditIssuer : Party
+    operator : Party
+    borrower : Party
+    approvedLimit : Decimal
+    score : Int
+  where
+    signatory creditIssuer
+    observer borrower, operator
+    ensure approvedLimit >= 0.0
+
+    -- | Apply this attestation to the borrower's profile. Consuming, so it
+    -- cannot be replayed (this is the nonce/replay-guard from the Soroban port).
+    -- Exercising it on the issuer-signed attestation contributes the issuer's
+    -- authority, so the archive is well-authorized; the operator updates the
+    -- (operator-signed) profile.
+    choice Attestation_Apply : ContractId CreditProfile
+      with
+        configCid : ContractId ProtocolConfig
+        profileCid : ContractId CreditProfile
+      controller operator
+      do
+        cfg <- fetch configCid
+        assertMsg "config operator mismatch" (cfg.operator == operator)
+        -- the headline check: only the TRUSTED issuer's attestations count
+        assertMsg "untrusted credit issuer" (creditIssuer == cfg.config.creditIssuer)
+        profile <- fetch profileCid
+        assertMsg "attestation is not for this profile"
+          (profile.borrower == borrower && profile.operator == operator)
+        archive profileCid
+        let newLimit = min (max profile.creditLimit approvedLimit) cfg.config.maxCreditLimit
+        create profile with score = score, creditLimit = newLimit

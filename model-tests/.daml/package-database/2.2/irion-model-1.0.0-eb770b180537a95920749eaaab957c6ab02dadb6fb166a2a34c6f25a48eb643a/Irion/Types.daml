@@ -1,0 +1,50 @@
+{-# LANGUAGE NoDamlSyntax #-}
+{-# LANGUAGE NoImplicitPrelude #-}
+{-# LANGUAGE NoOverloadedStrings #-}
+{-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE MagicHash #-}
+{-# LANGUAGE DatatypeContexts #-}
+{-# OPTIONS_GHC -Wno-unused-imports -Wno-missing-methods -Wno-deprecations -Wno-x-crypto -Wno-x-exceptions #-}
+module Irion.Types (
+        type Irion.Types.LoanStatus(Irion.Types.Active, Irion.Types.Repaid,
+                                    Irion.Types.Defaulted)
+    ) where
+import Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Exception
+    ()
+import Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Fail
+    ()
+import Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Interface.AnyView
+    ()
+import Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Prelude
+    ()
+import Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Serializable.Instances
+    ()
+import Pkg_22f06468b5d29daf6797c0b968471b6f813974cd432d297ec91bc00321454961.DA.Internal.Template.Functions
+    ()
+import CurrentSdk.Data.String
+import Pkg_11978acf1971ebffa32ef626228faaf06526c0693e80117558f2abc795274368.GHC.Classes
+import CurrentSdk.GHC.Err
+import Pkg_11978acf1971ebffa32ef626228faaf06526c0693e80117558f2abc795274368.GHC.Show
+import CurrentSdk.GHC.Types
+data LoanStatus = Active | Repaid | Defaulted
+instance (() =>
+          Pkg_11978acf1971ebffa32ef626228faaf06526c0693e80117558f2abc795274368.GHC.Show.Show Irion.Types.LoanStatus) where
+  showsPrec _ _ _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+  show _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+  showList _ _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+instance (() =>
+          Pkg_11978acf1971ebffa32ef626228faaf06526c0693e80117558f2abc795274368.GHC.Classes.Eq Irion.Types.LoanStatus) where
+  (==) _ _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))
+  (/=) _ _
+    = (CurrentSdk.GHC.Err.error
+         (CurrentSdk.Data.String.fromString "data-dependency stub"))

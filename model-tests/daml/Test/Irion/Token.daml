@@ -1,0 +1,33 @@
+module Test.Irion.Token where
+
+import Irion.Token
+import Daml.Script
+import DA.Assert ((===))
+
+-- | Mint, transfer, split, and merge a USDC holding.
+test_token_lifecycle : Script ()
+test_token_lifecycle = do
+  issuer <- allocateParty "Issuer"
+  alice <- allocateParty "Alice"
+  bob <- allocateParty "Bob"
+
+  -- issuer mints 100 USDC to alice
+  aliceTok <- submit issuer do
+    createCmd Token with issuer; owner = alice; amount = 100.0
+
+  -- alice sends the whole holding to bob
+  bobTok <- submit alice do
+    exerciseCmd aliceTok Token_Transfer with newOwner = bob
+  Some t <- queryContractId bob bobTok
+  t.owner === bob
+  t.amount === 100.0
+
+  -- bob splits 30 off, then merges it back -> still 100
+  (splitCid, remCid) <- submit bob do
+    exerciseCmd bobTok Token_Split with splitAmount = 30.0
+  mergedCid <- submit bob do
+    exerciseCmd splitCid Token_Merge with otherCid = remCid
+  Some m <- queryContractId bob mergedCid
+  m.amount === 100.0
+
+  pure ()

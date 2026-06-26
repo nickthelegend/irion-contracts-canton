@@ -1,0 +1,126 @@
+module Test.Irion.Pool where
+
+import Irion.Token
+import Irion.Pool
+import Daml.Script
+import DA.Assert ((===))
+
+-- | issuer mints `amount` USDC to `owner`.
+mintUsdc : Party -> Party -> Decimal -> Script (ContractId Token)
+mintUsdc issuer owner amount = submit issuer do createCmd Token with issuer; owner; amount
+
+-- | bootstrap an empty pool (minimumLiquidity = 1.0).
+setupPool : Party -> Party -> Script (ContractId LendingPool)
+setupPool operator usdcIssuer = submit operator do
+  createCmd LendingPool with
+    operator; usdcIssuer
+    totalShares = 0.0
+    available = 0.0
+    totalBorrowed = 0.0
+    minimumLiquidity = 1.0
+
+-- | full deposit flow: supplier escrows USDC to operator, files a request,
+-- operator settles shares. (Separate submits: Script Commands is applicative.)
+supply : Party -> Party -> Party -> ContractId LendingPool -> Decimal -> ContractId Token
+        -> Script (ContractId LendingPool, ContractId PoolShare)
+supply operator usdcIssuer supplier poolCid amount supplierTokenCid = do
+  escrowCid <- submit supplier do exerciseCmd supplierTokenCid Token_Transfer with newOwner = operator
+  reqCid <- submit supplier do
+    createCmd SupplyRequest with operator; supplier; usdcIssuer; amount; escrowCid
+  submit operator do exerciseCmd reqCid SupplyRequest_Accept with poolCid
+
+-- | find an operator-custodied USDC holding covering `minAmt`.
+findToken : Party -> Decimal -> Script (ContractId Token)
+findToken owner minAmt = do
+  toks <- query @Token owner
+  case [ cid | (cid, t) <- toks, t.owner == owner, t.amount >= minAmt ] of
+    (cid :: _) -> pure cid
+    [] -> abort "no operator token covers the payout"
+
+-- | full redemption flow: operator pays the share's USDC value from custody.
+withdraw : Party -> Party -> ContractId LendingPool -> ContractId PoolShare
+         -> Script (ContractId LendingPool, ContractId Token)
+withdraw operator supplier poolCid shareCid = do
+  Some pool <- queryContractId operator poolCid
+  Some share <- queryContractId operator shareCid
+  let amount = share.shares * (pool.available + pool.totalBorrowed) / pool.totalShares
+  payCid <- findToken operator amount
+  reqCid <- submit supplier do createCmd WithdrawRequest with operator; supplier; shareCid
+  submit operator do exerciseCmd reqCid WithdrawRequest_Accept with poolCid; payTokenCid = payCid
+
+-- | Supply → yield → second supply → redeem-with-profit. Verifies share math.
+test_supply_withdraw_with_yield : Script ()
+test_supply_withdraw_with_yield = do
+  issuer <- allocateParty "Issuer"
+  operator <- allocateParty "Operator"
+  alice <- allocateParty "Alice"
+  bob <- allocateParty "Bob"
+
+  pool0 <- setupPool operator issuer
+
+  -- alice supplies 100 -> minted 99 (1.0 permanently locked)
+  aliceTok <- mintUsdc issuer alice 100.0
+  (pool1, aliceShare) <- supply operator issuer alice pool0 100.0 aliceTok
+  Some s <- queryContractId operator aliceShare
+  s.shares === 99.0
+  Some p1 <- queryContractId operator pool1
+  p1.totalShares === 100.0
+  p1.available === 100.0
+
+  -- inject 10 yield (operator holds a 10 USDC token) -> share value lifts, shares don't
+  yieldTok <- mintUsdc issuer operator 10.0
+  pool2 <- submit operator do exerciseCmd pool1 Pool_InjectYield with amount = 10.0; tokenCid = yieldTok
+  Some p2 <- queryContractId operator pool2
+  p2.available === 110.0
+  p2.totalShares === 100.0
+
+  -- bob supplies 110 -> shares = 110 * 100 / 110 = 100
+  bobTok <- mintUsdc issuer bob 110.0
+  (pool3, bobShare) <- supply operator issuer bob pool2 110.0 bobTok
+  Some bs <- queryContractId operator bobShare
+  bs.shares === 100.0
+  Some p3 <- queryContractId operator pool3
+  p3.totalShares === 200.0
+  p3.available === 220.0
+
+  -- alice redeems 99 shares -> 99 * 220 / 200 = 108.9 (profit from yield)
+  (pool4, alicePaid) <- withdraw operator alice pool3 aliceShare
+  Some ap <- queryContractId alice alicePaid
+  ap.owner === alice
+  ap.amount === 108.9
+  Some p4 <- queryContractId operator pool4
+  p4.totalShares === 101.0
+  p4.available === 111.1
+
+  pure ()
+
+-- | The donation-attack guard: a first deposit that wouldn't mint > 0 shares fails.
+test_donation_guard : Script ()
+test_donation_guard = do
+  issuer <- allocateParty "Issuer"
+  operator <- allocateParty "Operator"
+  mallory <- allocateParty "Mallory"
+
+  pool0 <- setupPool operator issuer
+  tok <- mintUsdc issuer mallory 1.0   -- == minimumLiquidity -> would mint 0 shares
+  escrowCid <- submit mallory do exerciseCmd tok Token_Transfer with newOwner = operator
+  reqCid <- submit mallory do
+    createCmd SupplyRequest with operator; supplier = mallory; usdcIssuer = issuer; amount = 1.0; escrowCid
+  submitMustFail operator do exerciseCmd reqCid SupplyRequest_Accept with poolCid = pool0
+
+-- | Operator can refund an escrowed deposit (reject path).
+test_supply_reject_refunds : Script ()
+test_supply_reject_refunds = do
+  issuer <- allocateParty "Issuer"
+  operator <- allocateParty "Operator"
+  carol <- allocateParty "Carol"
+
+  _pool0 <- setupPool operator issuer
+  tok <- mintUsdc issuer carol 25.0
+  escrowCid <- submit carol do exerciseCmd tok Token_Transfer with newOwner = operator
+  reqCid <- submit carol do
+    createCmd SupplyRequest with operator; supplier = carol; usdcIssuer = issuer; amount = 25.0; escrowCid
+  refundCid <- submit operator do exerciseCmd reqCid SupplyRequest_Reject
+  Some refund <- queryContractId carol refundCid
+  refund.owner === carol
+  refund.amount === 25.0

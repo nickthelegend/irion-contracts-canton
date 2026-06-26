@@ -1,0 +1,325 @@
+-- | BNPL engine, unsecured market, and merchant escrow (ports the Soroban
+-- `open_purchase` / `borrow_unsecured` / repay / release / default / merchant
+-- flows).
+--
+-- Custody & authority model:
+--  * Every USDC movement is a real `Token` transfer — no fake balances.
+--  * A `Loan` is co-signed by `operator` AND `borrower`. That co-signature is
+--    what lets a loan choice update the operator-signed `LendingPool` and
+--    `CreditProfile` (exercising a choice contributes the contract's
+--    signatories' authority to its consequences) while still being initiated by
+--    whoever is paying.
+--  * Opening a loan is propose/accept: the borrower proposes (and escrows
+--    collateral into operator custody), the operator settles. The borrower's
+--    signature on the request flows into the accept, so the jointly-signed
+--    `Loan` can be created.
+module Irion.Bnpl where
+
+import Irion.Types
+import Irion.Token
+import Irion.Pool
+import Irion.Credit
+import Irion.Config
+import DA.Time (addRelTime, seconds)
+
+-- | A settlement receipt: the merchant was paid `amount` USDC up front for a
+-- `borrower` purchase. The USDC itself is transferred to the merchant at
+-- settlement (BNPL "pay the merchant up front"); this is the record for the
+-- merchant dashboard. Visible only to operator + merchant.
+template MerchantPayment
+  with
+    operator : Party
+    merchant : Party
+    borrower : Party
+    amount : Decimal
+  where
+    signatory operator
+    observer merchant
+    ensure amount > 0.0
+
+-- | A BNPL ("pay never") or unsecured loan.
+template Loan
+  with
+    operator : Party
+    borrower : Party
+    merchant : Party                            -- == borrower for unsecured
+    principal : Decimal
+    principalRepaid : Decimal
+    outstanding : Decimal                        -- principal + interest still owed
+    collateral : Decimal                         -- 0 for unsecured
+    collateralTokenCid : Optional (ContractId Token)  -- operator-custodied collateral
+    dueTime : Time
+    status : LoanStatus
+  where
+    signatory operator, borrower
+    observer merchant
+    ensure principal > 0.0
+
+    -- | Repay (partial/full). `payer` is the borrower for a normal repayment,
+    -- or the operator acting as keeper routing yield ("pay never"). Principal
+    -- returns to lendable liquidity; interest stays in the pool, lifting share
+    -- value for suppliers. Good history rewards the borrower's credit line.
+    choice Loan_Pay : (ContractId Loan, ContractId LendingPool, ContractId CreditProfile)
+      with
+        payer : Party
+        payTokenCid : ContractId Token
+        amount : Decimal
+        poolCid : ContractId LendingPool
+        profileCid : ContractId CreditProfile
+        configCid : ContractId ProtocolConfig
+      controller payer
+      do
+        assertMsg "loan is not active" (status == Active)
+        assertMsg "amount must be positive" (amount > 0.0)
+        cfg <- fetch configCid
+        assertMsg "config operator mismatch" (cfg.operator == operator)
+        pool <- fetch poolCid
+        assertMsg "pool operator mismatch" (pool.operator == operator)
+        profile <- fetch profileCid
+        assertMsg "profile/borrower mismatch" (profile.borrower == borrower && profile.operator == operator)
+        payTok <- fetch payTokenCid
+        assertMsg "pay token must be payer-owned pool USDC" (payTok.owner == payer && payTok.issuer == pool.usdcIssuer)
+
+        let applied = min amount outstanding
+        assertMsg "pay token must cover the payment" (payTok.amount >= applied)
+        let principalOutstanding = principal - principalRepaid
+        let principalPart = min applied principalOutstanding
+
+        -- move `applied` from payer into operator (pool) custody
+        _ <- if payTok.amount == applied
+          then exercise payTokenCid Token_Transfer with newOwner = operator
+          else do
+            (toPool, _change) <- exercise payTokenCid Token_Split with splitAmount = applied
+            exercise toPool Token_Transfer with newOwner = operator
+
+        -- pool: principal back to lendable; interest stays in available (yield)
+        archive poolCid
+        newPool <- create pool with
+          available = pool.available + applied
+          totalBorrowed = pool.totalBorrowed - principalPart
+
+        -- profile: free headroom + reward repayment history
+        archive profileCid
+        let reward = principalPart * cfg.config.repayRewardRate
+        newProfile <- create profile with
+          outstanding = max (profile.outstanding - principalPart) 0.0
+          repaidTotal = profile.repaidTotal + principalPart
+          repayments = profile.repayments + 1
+          creditLimit = min (profile.creditLimit + reward) cfg.config.maxCreditLimit
+
+        let newOutstanding = outstanding - applied
+        newLoan <- create this with
+          principalRepaid = principalRepaid + principalPart
+          outstanding = newOutstanding
+          status = if newOutstanding == 0.0 then Repaid else Active
+        pure (newLoan, newPool, newProfile)
+
+    -- | Reclaim collateral once the loan is fully repaid.
+    choice Loan_ReleaseCollateral : ContractId Token
+      controller borrower
+      do
+        assertMsg "loan is not repaid" (status == Repaid)
+        case collateralTokenCid of
+          None -> abort "loan has no collateral to release"
+          Some ctc -> exercise ctc Token_Transfer with newOwner = borrower
+
+    -- | Liquidate a past-due loan: collateral repays the debt (surplus refunded,
+    -- shortfall written off against suppliers), unsecured headroom is forfeited.
+    choice Loan_Default : (ContractId Loan, ContractId LendingPool, ContractId CreditProfile)
+      with
+        poolCid : ContractId LendingPool
+        profileCid : ContractId CreditProfile
+      controller operator
+      do
+        assertMsg "loan is not active" (status == Active)
+        now <- getTime
+        assertMsg "loan is not yet due" (now > dueTime)
+        pool <- fetch poolCid
+        assertMsg "pool operator mismatch" (pool.operator == operator)
+        profile <- fetch profileCid
+        assertMsg "profile/borrower mismatch" (profile.borrower == borrower && profile.operator == operator)
+
+        let debt = outstanding
+        let recovered = min collateral debt
+        let refund = collateral - recovered
+        let principalOutstanding = principal - principalRepaid
+
+        -- seize collateral: `recovered` stays operator-owned (pool liquidity),
+        -- any surplus is refunded to the borrower.
+        case collateralTokenCid of
+          None -> pure ()
+          Some ctc ->
+            if refund <= 0.0
+              then pure ()                                  -- whole collateral seized
+              else do
+                (_keep, refundCid) <- exercise ctc Token_Split with splitAmount = recovered
+                _ <- exercise refundCid Token_Transfer with newOwner = borrower
+                pure ()
+
+        archive poolCid
+        newPool <- create pool with
+          available = pool.available + recovered
+          totalBorrowed = max (pool.totalBorrowed - principalOutstanding) 0.0
+
+        archive profileCid
+        let newOut = max (profile.outstanding - principalOutstanding) 0.0
+        newProfile <- create profile with
+          outstanding = newOut
+          creditLimit = newOut          -- forfeit headroom
+          score = 0                     -- creditworthiness revoked on default
+
+        newLoan <- create this with
+          status = Defaulted
+          collateral = 0.0
+          collateralTokenCid = None
+        pure (newLoan, newPool, newProfile)
+
+-- | Borrower's request to open a "pay never" BNPL purchase. Collateral is
+-- escrowed into operator custody when the request is created.
+template BnplRequest
+  with
+    operator : Party
+    borrower : Party
+    merchant : Party
+    amount : Decimal
+    collateral : Decimal
+    collateralEscrowCid : ContractId Token   -- collateral transferred to operator at propose
+    termSeconds : Int
+  where
+    signatory borrower
+    observer operator
+    ensure amount > 0.0 && collateral >= amount
+
+    -- | Operator settles: pays the merchant from pool liquidity, records the
+    -- credit draw, opens the loan. `merchantFundTokenCid` is operator pool USDC
+    -- (>= amount) from which the merchant's claim is earmarked.
+    choice BnplRequest_Accept
+        : (ContractId Loan, ContractId LendingPool, ContractId CreditProfile, ContractId MerchantPayment)
+      with
+        poolCid : ContractId LendingPool
+        profileCid : ContractId CreditProfile
+        configCid : ContractId ProtocolConfig
+        merchantFundTokenCid : ContractId Token
+      controller operator
+      do
+        cfg <- fetch configCid
+        assertMsg "config operator mismatch" (cfg.operator == operator)
+        pool <- fetch poolCid
+        assertMsg "pool operator mismatch" (pool.operator == operator)
+        profile <- fetch profileCid
+        assertMsg "profile/borrower mismatch" (profile.borrower == borrower && profile.operator == operator)
+        escrow <- fetch collateralEscrowCid
+        assertMsg "collateral must be operator-custodied USDC of `collateral`"
+          (escrow.owner == operator && escrow.issuer == pool.usdcIssuer && escrow.amount == collateral)
+
+        assertMsg "over credit limit" (profile.outstanding + amount <= profile.creditLimit)
+        assertMsg "insufficient pool liquidity" (amount <= pool.available)
+
+        -- pay the merchant up front out of operator pool USDC
+        fund <- fetch merchantFundTokenCid
+        assertMsg "merchant fund must be operator pool USDC >= amount"
+          (fund.owner == operator && fund.issuer == pool.usdcIssuer && fund.amount >= amount)
+        _ <- if fund.amount == amount
+          then exercise merchantFundTokenCid Token_Transfer with newOwner = merchant
+          else do
+            (toMerchant, _change) <- exercise merchantFundTokenCid Token_Split with splitAmount = amount
+            exercise toMerchant Token_Transfer with newOwner = merchant
+
+        let interest = amount * cfg.config.borrowInterestRate
+
+        archive poolCid
+        newPool <- create pool with
+          available = pool.available - amount
+          totalBorrowed = pool.totalBorrowed + amount
+        merchantPayment <- create MerchantPayment with
+          operator; merchant; borrower; amount
+
+        archive profileCid
+        newProfile <- create profile with outstanding = profile.outstanding + amount
+
+        now <- getTime
+        loan <- create Loan with
+          operator; borrower; merchant
+          principal = amount
+          principalRepaid = 0.0
+          outstanding = amount + interest
+          collateral
+          collateralTokenCid = Some collateralEscrowCid
+          dueTime = addRelTime now (seconds termSeconds)
+          status = Active
+        pure (loan, newPool, newProfile, merchantPayment)
+
+    -- | Operator rejects: refund the escrowed collateral to the borrower.
+    choice BnplRequest_Reject : ContractId Token
+      controller operator
+      do
+        escrow <- fetch collateralEscrowCid
+        assertMsg "escrow must be operator-custodied" (escrow.owner == operator)
+        exercise collateralEscrowCid Token_Transfer with newOwner = borrower
+
+-- | Borrower's request to draw UNSECURED credit (no collateral). The payoff of
+-- a verified credit score: gated on `score >= minScoreUncollat`.
+template UnsecuredRequest
+  with
+    operator : Party
+    borrower : Party
+    amount : Decimal
+    termSeconds : Int
+  where
+    signatory borrower
+    observer operator
+    ensure amount > 0.0
+
+    choice UnsecuredRequest_Accept : (ContractId Loan, ContractId LendingPool, ContractId CreditProfile)
+      with
+        poolCid : ContractId LendingPool
+        profileCid : ContractId CreditProfile
+        configCid : ContractId ProtocolConfig
+        disburseTokenCid : ContractId Token   -- operator pool USDC to disburse
+      controller operator
+      do
+        cfg <- fetch configCid
+        assertMsg "config operator mismatch" (cfg.operator == operator)
+        pool <- fetch poolCid
+        assertMsg "pool operator mismatch" (pool.operator == operator)
+        profile <- fetch profileCid
+        assertMsg "profile/borrower mismatch" (profile.borrower == borrower && profile.operator == operator)
+
+        -- THE GATE: unsecured credit requires an attested score >= minimum
+        assertMsg "score too low for unsecured credit" (profile.score >= cfg.config.minScoreUncollat)
+        assertMsg "over credit limit" (profile.outstanding + amount <= profile.creditLimit)
+        assertMsg "insufficient pool liquidity" (amount <= pool.available)
+
+        disb <- fetch disburseTokenCid
+        assertMsg "disburse token must be operator pool USDC >= amount"
+          (disb.owner == operator && disb.issuer == pool.usdcIssuer && disb.amount >= amount)
+
+        let premiumRate = cfg.config.borrowInterestRate + cfg.config.uncollatPremiumRate
+        let interest = amount * premiumRate
+
+        archive poolCid
+        newPool <- create pool with
+          available = pool.available - amount
+          totalBorrowed = pool.totalBorrowed + amount
+
+        archive profileCid
+        newProfile <- create profile with outstanding = profile.outstanding + amount
+
+        -- disburse cash directly to the borrower
+        _ <- if disb.amount == amount
+          then exercise disburseTokenCid Token_Transfer with newOwner = borrower
+          else do
+            (toBorrower, _change) <- exercise disburseTokenCid Token_Split with splitAmount = amount
+            exercise toBorrower Token_Transfer with newOwner = borrower
+
+        now <- getTime
+        loan <- create Loan with
+          operator; borrower; merchant = borrower
+          principal = amount
+          principalRepaid = 0.0
+          outstanding = amount + interest
+          collateral = 0.0
+          collateralTokenCid = None
+          dueTime = addRelTime now (seconds termSeconds)
+          status = Active
+        pure (loan, newPool, newProfile)
